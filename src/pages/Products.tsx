@@ -16,13 +16,17 @@ import {
   TextField,
   Typography,
   Box,
+  IconButton,
 } from '@mui/material';
+import { Edit as EditIcon } from '@mui/icons-material';
 import { supabase } from '../lib/supabase';
 import { Product } from '../types/database';
 
 const Products = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [open, setOpen] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [newProduct, setNewProduct] = useState<Partial<Product>>({
     name: '',
     code: '',
@@ -50,30 +54,87 @@ const Products = () => {
     }
   };
 
-  const handleOpen = () => setOpen(true);
-  const handleClose = () => setOpen(false);
+  const handleOpen = () => {
+    setEditMode(false);
+    setEditingProduct(null);
+    setNewProduct({
+      name: '',
+      code: '',
+      category: '',
+      price: 0,
+      stock_quantity: 0,
+      min_stock_level: 0,
+    });
+    setOpen(true);
+  };
+
+  const handleEdit = (product: Product) => {
+    setEditMode(true);
+    setEditingProduct(product);
+    setNewProduct({
+      name: product.name,
+      code: product.code,
+      category: product.category,
+      price: product.price,
+      stock_quantity: product.stock_quantity,
+      min_stock_level: product.min_stock_level,
+    });
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+    setEditMode(false);
+    setEditingProduct(null);
+    setNewProduct({
+      name: '',
+      code: '',
+      category: '',
+      price: 0,
+      stock_quantity: 0,
+      min_stock_level: 0,
+    });
+  };
 
   const handleSubmit = async () => {
     try {
-      const { data, error } = await supabase
-        .from('products')
-        .insert([newProduct])
-        .select();
+      if (editMode && editingProduct) {
+        // Güncelleme işlemi
+        const { data, error } = await supabase
+          .from('products')
+          .update({
+            name: newProduct.name,
+            code: newProduct.code,
+            category: newProduct.category,
+            price: newProduct.price,
+            stock_quantity: newProduct.stock_quantity,
+            min_stock_level: newProduct.min_stock_level,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', editingProduct.id)
+          .select();
 
-      if (error) throw error;
+        if (error) throw error;
 
-      setProducts([data[0], ...products]);
+        // Listeyi güncelle
+        setProducts(products.map((p: Product) => 
+          p.id === editingProduct.id ? data[0] : p
+        ));
+      } else {
+        // Yeni ürün ekleme işlemi
+        const { data, error } = await supabase
+          .from('products')
+          .insert([newProduct])
+          .select();
+
+        if (error) throw error;
+
+        setProducts([data[0], ...products]);
+      }
+
       handleClose();
-      setNewProduct({
-        name: '',
-        code: '',
-        category: '',
-        price: 0,
-        stock_quantity: 0,
-        min_stock_level: 0,
-      });
     } catch (error) {
-      console.error('Error adding product:', error);
+      console.error('Error saving product:', error);
     }
   };
 
@@ -96,6 +157,7 @@ const Products = () => {
               <TableCell align="right">Fiyat</TableCell>
               <TableCell align="right">Stok Miktarı</TableCell>
               <TableCell align="right">Min. Stok Seviyesi</TableCell>
+              <TableCell align="center">İşlemler</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -107,6 +169,15 @@ const Products = () => {
                 <TableCell align="right">{product.price} TL</TableCell>
                 <TableCell align="right">{product.stock_quantity}</TableCell>
                 <TableCell align="right">{product.min_stock_level}</TableCell>
+                <TableCell align="center">
+                  <IconButton 
+                    onClick={() => handleEdit(product)}
+                    color="primary"
+                    title="Düzenle"
+                  >
+                    <EditIcon />
+                  </IconButton>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -114,7 +185,9 @@ const Products = () => {
       </TableContainer>
 
       <Dialog open={open} onClose={handleClose}>
-        <DialogTitle>Yeni Ürün Ekle</DialogTitle>
+        <DialogTitle>
+          {editMode ? 'Ürün Düzenle' : 'Yeni Ürün Ekle'}
+        </DialogTitle>
         <DialogContent>
           <TextField
             autoFocus
@@ -184,7 +257,7 @@ const Products = () => {
         <DialogActions>
           <Button onClick={handleClose}>İptal</Button>
           <Button onClick={handleSubmit} variant="contained">
-            Kaydet
+            {editMode ? 'Güncelle' : 'Kaydet'}
           </Button>
         </DialogActions>
       </Dialog>
