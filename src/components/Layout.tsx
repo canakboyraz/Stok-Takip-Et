@@ -298,6 +298,7 @@ const Layout = ({ children }: LayoutProps) => {
   const menuPlanningSubMenuItems = [
     { text: 'Tarifler', icon: <RestaurantIcon />, path: '/recipes' },
     { text: 'Menüler', icon: <MenuBookIcon />, path: '/menus' },
+    { text: 'Menü Tüketimi', icon: <ShoppingCartIcon />, path: '/menu-consumption' },
   ];
 
   const drawer = (
