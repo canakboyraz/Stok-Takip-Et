@@ -29,6 +29,7 @@ import RecipeAdd from './pages/RecipeAdd';
 import Menus from './pages/Menus';
 import MenuAdd from './pages/MenuAdd';
 import MenuConsumption from './pages/MenuConsumption';
+import MenuConsumptionUndo from './pages/MenuConsumptionUndo';
 
 import ProductTemplates from './pages/ProductTemplates';
 import Activities from './pages/Activities';
@@ -228,6 +229,7 @@ function App() {
             <Route path="/menu-add" element={<PrivateRoute><MenuAdd /></PrivateRoute>} />
             <Route path="/menu-edit/:id" element={<PrivateRoute><MenuAdd /></PrivateRoute>} />
             <Route path="/menu-consumption" element={<PrivateRoute><MenuConsumption /></PrivateRoute>} />
+            <Route path="/menu-consumption-undo" element={<PrivateRoute><MenuConsumptionUndo /></PrivateRoute>} />
             
             {/* Etkinlik kayıtları sayfası */}
             <Route path="/activities" element={<PrivateRoute><Activities /></PrivateRoute>} />

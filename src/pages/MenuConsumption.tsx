@@ -226,8 +226,24 @@ const MenuConsumption = () => {
         return;
       }
 
-      // Bulk ID oluştur
-      const bulkId = `menu_consumption_${Date.now()}`;
+      // Bulk ID oluştur (numeric format for bulk_movements table)
+      const bulkId = Math.floor(Date.now() / 1000); // Unix timestamp as number
+
+      // Bulk movement kaydını oluştur
+      const { error: bulkError } = await supabase
+        .from('bulk_movements')
+        .insert({
+          id: bulkId,
+          date: new Date().toISOString(),
+          notes: `Menü tüketimi: ${selectedMenu?.name} - ${guestCount} kişi (Toplam: ${totalCost.toFixed(2)} ₺)`,
+          type: 'out',
+          project_id: parseInt(currentProjectId),
+          user_id: userData.user.id,
+          operation_type: 'menu_consumption',
+          can_be_reversed: true,
+        });
+
+      if (bulkError) throw bulkError;
 
       // Her ürün için stok hareketi oluştur ve stok güncelle
       for (const item of consumptionItems) {
@@ -242,7 +258,7 @@ const MenuConsumption = () => {
             notes: `Menü tüketimi: ${selectedMenu?.name} - ${guestCount} kişi`,
             user_id: userData.user.id,
             is_bulk: true,
-            bulk_id: bulkId,
+            bulk_id: bulkId.toString(),
             project_id: parseInt(currentProjectId),
           });
 
@@ -278,9 +294,19 @@ const MenuConsumption = () => {
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Paper sx={{ p: 3 }}>
-        <Typography variant="h4" gutterBottom>
-          🍽️ Menü Tüketim Sistemi
-        </Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Typography variant="h4">
+            🍽️ Menü Tüketim Sistemi
+          </Typography>
+          <Button
+            variant="outlined"
+            color="warning"
+            onClick={() => navigate('/menu-consumption-undo')}
+            startIcon={<span>🔄</span>}
+          >
+            Geri Alma
+          </Button>
+        </Box>
         
         <Typography variant="body1" color="text.secondary" paragraph>
           Hazırladığınız menülerden birini seçin, kişi sayısını girin ve otomatik olarak 

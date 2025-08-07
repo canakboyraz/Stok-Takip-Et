@@ -44,6 +44,7 @@ import {
   Add as AddIcon,
   ShoppingCart as ShoppingCartIcon,
   Timeline as TimelineIcon,
+  Undo as UndoIcon,
 } from '@mui/icons-material';
 import { supabase } from '../lib/supabase';
 import { Project } from '../types/database';
@@ -299,6 +300,7 @@ const Layout = ({ children }: LayoutProps) => {
     { text: 'Tarifler', icon: <RestaurantIcon />, path: '/recipes' },
     { text: 'Menüler', icon: <MenuBookIcon />, path: '/menus' },
     { text: 'Menü Tüketimi', icon: <ShoppingCartIcon />, path: '/menu-consumption' },
+    { text: 'Tüketim Geri Alma', icon: <UndoIcon />, path: '/menu-consumption-undo' },
   ];
 
   const drawer = (
