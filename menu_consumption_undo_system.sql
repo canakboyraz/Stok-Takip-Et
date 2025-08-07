@@ -219,4 +219,9 @@ VALUES (
 );
 */
 
-RAISE NOTICE '✅ Menü tüketim geri alma sistemi database güncellemeleri tamamlandı!';
+-- Son kontrol mesajı
+DO $$
+BEGIN
+    RAISE NOTICE '✅ Menü tüketim geri alma sistemi database güncellemeleri tamamlandı!';
+END
+$$;

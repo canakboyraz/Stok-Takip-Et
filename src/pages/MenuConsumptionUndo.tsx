@@ -23,12 +23,10 @@ import {
   CardContent,
   IconButton,
   Tooltip,
-  Divider,
 } from '@mui/material';
 import {
   Undo as UndoIcon,
   AccessTime as AccessTimeIcon,
-  Person as PersonIcon,
   Restaurant as RestaurantIcon,
   Warning as WarningIcon,
   CheckCircle as CheckCircleIcon,
@@ -50,7 +48,9 @@ interface ReversibleOperation {
   reversed_by: string | null;
   reversal_reason: string | null;
   can_be_reversed: boolean;
-  is_within_24h: boolean;
+  operation_rank: number;
+  can_undo_now: boolean;
+  undo_status: string;
   total_items: number;
   estimated_cost: number;
 }
@@ -250,7 +250,8 @@ const MenuConsumptionUndo = () => {
         </Box>
 
         <Typography variant="body1" color="text.secondary" paragraph>
-          Son 24 saat içinde yapılan menü tüketim işlemlerini geri alabilirsiniz. 
+          Menü tüketim işlemlerini sıralı olarak geri alabilirsiniz. 
+          Güvenlik için sadece <strong>en son yapılan işlem</strong> geri alınabilir.
           Geri alınan işlemler stokları otomatik olarak geri yükler.
         </Typography>
 
@@ -279,7 +280,7 @@ const MenuConsumptionUndo = () => {
                     Geri alınabilir işlem bulunamadı
                   </Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                    Son 24 saat içinde menü tüketimi yapılmamış veya tüm işlemler zaten geri alınmış.
+                    Menü tüketimi yapılmamış veya tüm işlemler zaten geri alınmış.
                   </Typography>
                   <Button
                     variant="outlined"
@@ -295,6 +296,7 @@ const MenuConsumptionUndo = () => {
                 <Table>
                   <TableHead>
                     <TableRow>
+                      <TableCell>Sıra</TableCell>
                       <TableCell>İşlem</TableCell>
                       <TableCell>Tarih</TableCell>
                       <TableCell>Açıklama</TableCell>
@@ -307,9 +309,7 @@ const MenuConsumptionUndo = () => {
                   <TableBody>
                     {operations.map((operation) => {
                       const operationType = getOperationTypeLabel(operation.operation_type);
-                      const canUndo = operation.can_be_reversed && 
-                                     operation.is_within_24h && 
-                                     !operation.is_reversed;
+                      const canUndo = operation.can_undo_now && !operation.is_reversed;
 
                       return (
                         <TableRow
@@ -318,11 +318,19 @@ const MenuConsumptionUndo = () => {
                             backgroundColor: operation.is_reversed 
                               ? 'action.disabled' 
                               : canUndo 
-                                ? 'inherit' 
+                                ? 'success.light' 
                                 : 'warning.light',
                             opacity: operation.is_reversed ? 0.6 : 1,
                           }}
                         >
+                          <TableCell>
+                            <Chip
+                              label={`#${operation.operation_rank}`}
+                              color={canUndo ? 'success' : 'warning'}
+                              size="small"
+                              variant={canUndo ? 'filled' : 'outlined'}
+                            />
+                          </TableCell>
                           <TableCell>
                             <Box sx={{ display: 'flex', alignItems: 'center' }}>
                               {operationType.icon}
@@ -335,26 +343,9 @@ const MenuConsumptionUndo = () => {
                             </Box>
                           </TableCell>
                           <TableCell>
-                            <Box>
-                              <Typography variant="body2">
-                                {formatDate(operation.date)}
-                              </Typography>
-                              {operation.is_within_24h ? (
-                                <Chip
-                                  icon={<CheckCircleIcon />}
-                                  label="24 saat içinde"
-                                  color="success"
-                                  size="small"
-                                />
-                              ) : (
-                                <Chip
-                                  icon={<WarningIcon />}
-                                  label="Süresi geçmiş"
-                                  color="warning"
-                                  size="small"
-                                />
-                              )}
-                            </Box>
+                            <Typography variant="body2">
+                              {formatDate(operation.date)}
+                            </Typography>
                           </TableCell>
                           <TableCell>
                             <Typography variant="body2">
@@ -376,18 +367,11 @@ const MenuConsumptionUndo = () => {
                                 color="default"
                                 size="small"
                               />
-                            ) : canUndo ? (
-                              <Chip
-                                icon={<CheckCircleIcon />}
-                                label="Geri Alınabilir"
-                                color="success"
-                                size="small"
-                              />
                             ) : (
                               <Chip
-                                icon={<WarningIcon />}
-                                label="Geri Alınamaz"
-                                color="warning"
+                                icon={canUndo ? <CheckCircleIcon /> : <WarningIcon />}
+                                label={operation.undo_status}
+                                color={canUndo ? 'success' : 'warning'}
                                 size="small"
                               />
                             )}

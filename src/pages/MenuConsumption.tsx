@@ -24,7 +24,7 @@ import {
   DialogActions,
 } from '@mui/material';
 import { supabase } from '../lib/supabase';
-import { Menu, Recipe, RecipeIngredient } from '../types/database';
+import { Menu, Recipe } from '../types/database';
 import { useNavigate } from 'react-router-dom';
 
 interface DetailedIngredient {
@@ -36,7 +36,7 @@ interface DetailedIngredient {
   current_stock: number;
 }
 
-interface DetailedRecipe extends Recipe {
+interface DetailedRecipe extends Omit<Recipe, 'ingredients'> {
   ingredients?: DetailedIngredient[];
   quantity?: number; // Menüdeki miktar
 }
@@ -56,7 +56,6 @@ const MenuConsumption = () => {
   const [menus, setMenus] = useState<Menu[]>([]);
   const [selectedMenu, setSelectedMenu] = useState<Menu | null>(null);
   const [guestCount, setGuestCount] = useState<number>(1);
-  const [menuRecipes, setMenuRecipes] = useState<DetailedRecipe[]>([]);
   const [consumptionItems, setConsumptionItems] = useState<ConsumptionItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [calculating, setCalculating] = useState(false);
@@ -165,7 +164,7 @@ const MenuConsumption = () => {
         })
       );
 
-      setMenuRecipes(recipesWithDetails);
+      // Recipes processed for consumption calculation
 
       // Tüketim hesaplaması yap
       const consumptionMap = new Map<number, ConsumptionItem>();
@@ -282,7 +281,6 @@ const MenuConsumption = () => {
       setSelectedMenu(null);
       setGuestCount(1);
       setConsumptionItems([]);
-      setMenuRecipes([]);
 
     } catch (err: any) {
       setError(`Tüketim kaydı hatası: ${err.message}`);
