@@ -84,7 +84,7 @@ const ProjectSelection = () => {
         
         // 2. Kullanıcının izin verilmiş olduğu projeler
         const { data: sharedProjectsData, error: sharedProjectsError } = await supabase
-          .from('project_users')
+          .from('project_permissions')
           .select(`
             id,
             project_id,
@@ -409,7 +409,7 @@ const ProjectSelection = () => {
       
       // 9. Proje izinleri
       const { error: permissionsError } = await supabase
-        .from('project_users')
+        .from('project_permissions')
         .delete()
         .eq('project_id', projectId);
         

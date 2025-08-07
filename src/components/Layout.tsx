@@ -58,8 +58,8 @@ const Layout = ({ children }: LayoutProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   
-  // Tüm state'leri başta tanımlayalım
-  const [drawerOpen, setDrawerOpen] = useState(true);
+  // Tüm state'leri başta tanımlayalım - Mobile'da kapalı, desktop'ta açık başlasın
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [currentProject, setCurrentProject] = useState<Project | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [stockMenuOpen, setStockMenuOpen] = useState(false);
@@ -85,6 +85,24 @@ const Layout = ({ children }: LayoutProps) => {
   useEffect(() => {
     loadUserInfo();
     loadCurrentProject();
+    
+    // Desktop'ta başlangıçta drawer'ı aç
+    const handleResize = () => {
+      if (window.innerWidth >= 900) {
+        setDrawerOpen(true);
+      } else {
+        setDrawerOpen(false);
+      }
+    };
+    
+    // İlk yüklemede kontrol et
+    handleResize();
+    
+    // Resize event listener ekle
+    window.addEventListener('resize', handleResize);
+    
+    // Cleanup
+    return () => window.removeEventListener('resize', handleResize);
   }, []); // Boş dependency array
 
   const loadUserInfo = async () => {
@@ -544,18 +562,24 @@ const Layout = ({ children }: LayoutProps) => {
       <AppBar
         position="fixed"
         sx={{
-          width: { sm: `calc(100% - ${drawerOpen ? drawerWidth : 0}px)` },
-          ml: { sm: `${drawerOpen ? drawerWidth : 0}px` },
-          transition: 'width 0.2s, margin-left 0.2s',
+          width: { 
+            xs: '100%',
+            sm: drawerOpen ? `calc(100% - ${drawerWidth}px)` : '100%' 
+          },
+          ml: { 
+            xs: 0,
+            sm: drawerOpen ? `${drawerWidth}px` : 0 
+          },
+          transition: 'width 0.3s ease, margin-left 0.3s ease',
         }}
       >
         <Toolbar>
           <IconButton
             color="inherit"
-            aria-label="open drawer"
+            aria-label="toggle drawer"
             edge="start"
             onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { sm: drawerOpen ? 'none' : 'block' } }}
+            sx={{ mr: 2 }}
           >
             <MenuIcon />
           </IconButton>
@@ -602,6 +626,7 @@ const Layout = ({ children }: LayoutProps) => {
           )}
         </Toolbar>
       </AppBar>
+      {/* Mobile Drawer */}
       <Drawer
         variant="temporary"
         open={drawerOpen}
@@ -614,21 +639,25 @@ const Layout = ({ children }: LayoutProps) => {
           '& .MuiDrawer-paper': {
             boxSizing: 'border-box',
             width: drawerWidth,
+            transition: 'transform 0.3s ease',
           },
         }}
       >
         {drawer}
       </Drawer>
+      
+      {/* Desktop Drawer */}
       <Drawer
-        variant="permanent"
+        variant="persistent"
+        open={drawerOpen}
         sx={{
-          display: { xs: 'none', sm: drawerOpen ? 'block' : 'none' },
+          display: { xs: 'none', sm: 'block' },
           '& .MuiDrawer-paper': {
             boxSizing: 'border-box',
             width: drawerWidth,
+            transition: 'transform 0.3s ease',
           },
         }}
-        open={drawerOpen}
       >
         {drawer}
       </Drawer>
@@ -639,6 +668,11 @@ const Layout = ({ children }: LayoutProps) => {
           p: { xs: 2, sm: 3 },
           width: '100%',
           marginTop: '64px',
+          marginLeft: { 
+            xs: 0, 
+            sm: drawerOpen ? `${drawerWidth}px` : 0 
+          },
+          transition: 'margin-left 0.3s ease',
         }}
       >
         {children}
