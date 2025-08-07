@@ -1,36 +1,41 @@
 import React, { useState, useEffect } from 'react';
 import {
   Container,
-  Paper,
+  Box,
+  Typography,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
+  Paper,
   Button,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
   TextField,
-  Typography,
-  Box,
   IconButton,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
 } from '@mui/material';
 import { Edit as EditIcon } from '@mui/icons-material';
 import { supabase } from '../lib/supabase';
-import { Product } from '../types/database';
+import { Product, Category } from '../types/database';
 
 const Products = () => {
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [open, setOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [newProduct, setNewProduct] = useState<Partial<Product>>({
     name: '',
     code: '',
-    category: '',
+    category_id: 0,
     price: 0,
     stock_quantity: 0,
     min_stock_level: 0,
@@ -38,13 +43,27 @@ const Products = () => {
 
   useEffect(() => {
     fetchProducts();
+    fetchCategories();
   }, []);
 
   const fetchProducts = async () => {
     try {
+      const currentProjectId = localStorage.getItem('currentProjectId');
+      if (!currentProjectId) {
+        console.error('Proje ID bulunamadı');
+        return;
+      }
+
       const { data, error } = await supabase
         .from('products')
-        .select('*')
+        .select(`
+          *,
+          categories:category_id (
+            id,
+            name
+          )
+        `)
+        .eq('project_id', currentProjectId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -54,13 +73,34 @@ const Products = () => {
     }
   };
 
+  const fetchCategories = async () => {
+    try {
+      const currentProjectId = localStorage.getItem('currentProjectId');
+      if (!currentProjectId) {
+        console.error('Proje ID bulunamadı');
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .eq('project_id', currentProjectId)
+        .order('name');
+
+      if (error) throw error;
+      setCategories(data || []);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
+  };
+
   const handleOpen = () => {
     setEditMode(false);
     setEditingProduct(null);
     setNewProduct({
       name: '',
       code: '',
-      category: '',
+      category_id: 0,
       price: 0,
       stock_quantity: 0,
       min_stock_level: 0,
@@ -74,10 +114,10 @@ const Products = () => {
     setNewProduct({
       name: product.name,
       code: product.code,
-      category: product.category,
+      category_id: product.category_id,
       price: product.price,
       stock_quantity: product.stock_quantity,
-      min_stock_level: product.min_stock_level,
+      min_stock_level: product.min_stock_level || 0,
     });
     setOpen(true);
   };
@@ -89,7 +129,7 @@ const Products = () => {
     setNewProduct({
       name: '',
       code: '',
-      category: '',
+      category_id: 0,
       price: 0,
       stock_quantity: 0,
       min_stock_level: 0,
@@ -98,21 +138,38 @@ const Products = () => {
 
   const handleSubmit = async () => {
     try {
+      const currentProjectId = localStorage.getItem('currentProjectId');
+      if (!currentProjectId) {
+        console.error('Proje ID bulunamadı');
+        return;
+      }
+
+      const productData = {
+        ...newProduct,
+        project_id: parseInt(currentProjectId)
+      };
+
       if (editMode && editingProduct) {
         // Güncelleme işlemi
         const { data, error } = await supabase
           .from('products')
           .update({
-            name: newProduct.name,
-            code: newProduct.code,
-            category: newProduct.category,
-            price: newProduct.price,
-            stock_quantity: newProduct.stock_quantity,
-            min_stock_level: newProduct.min_stock_level,
+            name: productData.name,
+            code: productData.code,
+            category_id: productData.category_id,
+            price: productData.price,
+            stock_quantity: productData.stock_quantity,
+            min_stock_level: productData.min_stock_level,
             updated_at: new Date().toISOString(),
           })
           .eq('id', editingProduct.id)
-          .select();
+          .select(`
+            *,
+            categories:category_id (
+              id,
+              name
+            )
+          `);
 
         if (error) throw error;
 
@@ -124,8 +181,14 @@ const Products = () => {
         // Yeni ürün ekleme işlemi
         const { data, error } = await supabase
           .from('products')
-          .insert([newProduct])
-          .select();
+          .insert([productData])
+          .select(`
+            *,
+            categories:category_id (
+              id,
+              name
+            )
+          `);
 
         if (error) throw error;
 
@@ -165,10 +228,10 @@ const Products = () => {
               <TableRow key={product.id}>
                 <TableCell>{product.code}</TableCell>
                 <TableCell>{product.name}</TableCell>
-                <TableCell>{product.category}</TableCell>
+                <TableCell>{product.categories?.name || 'Kategori yok'}</TableCell>
                 <TableCell align="right">{product.price} TL</TableCell>
                 <TableCell align="right">{product.stock_quantity}</TableCell>
-                <TableCell align="right">{product.min_stock_level}</TableCell>
+                <TableCell align="right">{product.min_stock_level || 0}</TableCell>
                 <TableCell align="center">
                   <IconButton 
                     onClick={() => handleEdit(product)}
@@ -208,15 +271,22 @@ const Products = () => {
               setNewProduct({ ...newProduct, code: e.target.value })
             }
           />
-          <TextField
-            margin="dense"
-            label="Kategori"
-            fullWidth
-            value={newProduct.category}
-            onChange={(e) =>
-              setNewProduct({ ...newProduct, category: e.target.value })
-            }
-          />
+          <FormControl fullWidth margin="dense">
+            <InputLabel>Kategori</InputLabel>
+            <Select
+              value={newProduct.category_id || ''}
+              onChange={(e) =>
+                setNewProduct({ ...newProduct, category_id: Number(e.target.value) })
+              }
+              label="Kategori"
+            >
+              {categories.map((category) => (
+                <MenuItem key={category.id} value={category.id}>
+                  {category.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
           <TextField
             margin="dense"
             label="Fiyat"

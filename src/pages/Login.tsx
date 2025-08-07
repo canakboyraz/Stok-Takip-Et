@@ -22,7 +22,7 @@ const Login = () => {
     const checkUser = async () => {
       const { data } = await supabase.auth.getSession();
       if (data.session) {
-        navigate('/dashboard');
+        navigate('/projects');
       }
     };
     checkUser();
@@ -44,8 +44,8 @@ const Login = () => {
       console.log("Login successful:", data);
       
       if (data.user) {
-        console.log("Navigating to dashboard");
-        navigate('/dashboard');
+        console.log("Navigating to projects");
+        navigate('/projects');
       }
     } catch (error: any) {
       console.error("Login error:", error.message);

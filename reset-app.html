@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Stok Takip Uygulaması Sıfırlama</title>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+        }
+        h1 {
+            color: #1976d2;
+            border-bottom: 2px solid #1976d2;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #333;
+            margin-top: 30px;
+        }
+        button {
+            background-color: #1976d2;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 0;
+        }
+        button:hover {
+            background-color: #1565c0;
+        }
+        button.danger {
+            background-color: #d32f2f;
+        }
+        button.danger:hover {
+            background-color: #c62828;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        .success {
+            color: #2e7d32;
+            font-weight: bold;
+        }
+        .warning {
+            color: #ff8f00;
+            font-weight: bold;
+        }
+        .danger {
+            color: #d32f2f;
+            font-weight: bold;
+        }
+        .step {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        .step-number {
+            display: inline-block;
+            background-color: #1976d2;
+            color: white;
+            width: 25px;
+            height: 25px;
+            text-align: center;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Stok Takip Uygulaması Veri Sıfırlama</h1>
+    
+    <div class="warning">
+        <p>⚠️ UYARI: Bu işlem geri alınamaz! Tüm verileriniz silinecektir. Devam etmeden önce gerekli yedekleri aldığınızdan emin olun.</p>
+    </div>
+    
+    <h2>1. Adım: Tarayıcı Verilerini Temizle</h2>
+    <div class="step">
+        <p>Tarayıcı local storage, session storage ve çerezleri temizlemek için aşağıdaki butona tıklayın:</p>
+        <button id="clearLocalButton">Tarayıcı Verilerini Temizle</button>
+        <div id="clearLocalResult"></div>
+    </div>
+    
+    <h2>2. Adım: Supabase Veritabanını Temizle</h2>
+    <div class="step">
+        <p>Supabase SQL Editor'de aşağıdaki kodları çalıştırın:</p>
+        <pre id="sqlCommands">-- Bu SQL komutlarını Supabase SQL Editöründe çalıştırabilirsiniz
+-- UYARI: Bu işlem tüm verileri siler ve geri alınamaz!
+
+-- Stock movements temizle (FK bağımlılıkları nedeniyle önce alt tablolar temizlenir)
+TRUNCATE TABLE stock_movements CASCADE;
+
+-- Personel verileri temizle
+TRUNCATE TABLE timesheet CASCADE;
+TRUNCATE TABLE personnel CASCADE;
+
+-- Giderleri temizle
+TRUNCATE TABLE expenses CASCADE;
+
+-- Tarif içeriklerini temizle
+TRUNCATE TABLE recipe_ingredients CASCADE;
+TRUNCATE TABLE recipes CASCADE;
+
+-- Menü verilerini temizle
+TRUNCATE TABLE menu_recipes CASCADE;
+TRUNCATE TABLE menus CASCADE;
+
+-- İzinleri temizle
+TRUNCATE TABLE project_permissions CASCADE;
+
+-- Ürün ve kategorileri temizle
+TRUNCATE TABLE products CASCADE;
+TRUNCATE TABLE categories CASCADE;
+
+-- Projeleri en son temizle
+TRUNCATE TABLE projects CASCADE;
+
+-- Aktiviteleri temizle
+TRUNCATE TABLE activities CASCADE;</pre>
+        <button id="copySqlButton">SQL Komutlarını Kopyala</button>
+    </div>
+    
+    <h2>3. Adım: Kullanıcıları Temizleme (İsteğe Bağlı)</h2>
+    <div class="step">
+        <p>Eğer tüm kullanıcıları silmek istiyorsanız, SQL Editor'de aşağıdaki komutu çalıştırın:</p>
+        <pre>-- UYARI: Bu komut tüm kullanıcıları siler!
+DELETE FROM auth.users WHERE true;</pre>
+        <p class="warning">⚠️ Not: Bu işlem, kendiniz dahil tüm kullanıcıları siler ve ardından yeni kayıt olmanız gerekir.</p>
+        <button id="copyUsersSqlButton">Kullanıcı Silme SQL'ini Kopyala</button>
+    </div>
+    
+    <h2>4. Adım: Yeniden Başlat</h2>
+    <div class="step">
+        <p>Tüm temizlik işlemleri tamamlandıktan sonra:</p>
+        <ol>
+            <li>Tarayıcınızı tamamen kapatıp yeniden açın</li>
+            <li>Stok Takip uygulamasını yeniden ziyaret edin</li>
+            <li>Yeni bir hesap oluşturun</li>
+            <li>Yeni bir proje oluşturun ve kullanmaya başlayın</li>
+        </ol>
+        <button onclick="window.location.href='/'">Uygulamaya Git</button>
+    </div>
+
+    <script>
+        document.getElementById('clearLocalButton').addEventListener('click', function() {
+            try {
+                // LocalStorage temizle
+                localStorage.clear();
+                
+                // SessionStorage temizle
+                sessionStorage.clear();
+                
+                // Cookies temizle
+                document.cookie.split(";").forEach(function(c) {
+                    document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+                });
+                
+                // Sonuç raporu
+                document.getElementById('clearLocalResult').innerHTML = '<p class="success">✅ Tarayıcı verileri başarıyla temizlendi!</p>';
+            } catch (error) {
+                document.getElementById('clearLocalResult').innerHTML = '<p class="danger">❌ Hata: ' + error.message + '</p>';
+            }
+        });
+        
+        document.getElementById('copySqlButton').addEventListener('click', function() {
+            const sqlText = document.getElementById('sqlCommands').textContent;
+            navigator.clipboard.writeText(sqlText).then(function() {
+                alert('SQL komutları panoya kopyalandı! Supabase SQL Editor\'e yapıştırabilirsiniz.');
+            }, function() {
+                alert('Kopyalama başarısız oldu. Lütfen metni manuel olarak kopyalayın.');
+            });
+        });
+        
+        document.getElementById('copyUsersSqlButton').addEventListener('click', function() {
+            const sqlText = "DELETE FROM auth.users WHERE true;";
+            navigator.clipboard.writeText(sqlText).then(function() {
+                alert('Kullanıcı silme SQL komutu panoya kopyalandı! Supabase SQL Editor\'e yapıştırabilirsiniz.');
+            }, function() {
+                alert('Kopyalama başarısız oldu. Lütfen metni manuel olarak kopyalayın.');
+            });
+        });
+    </script>
+</body>
+</html> 

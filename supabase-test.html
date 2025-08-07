@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Supabase Test</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>Supabase Bağlantı Testi</h1>
+    <div id="result"></div>
+
+    <script>
+        // Supabase bilgileri
+        const supabaseUrl = 'https://jrntktkmnkapxokoyhwc.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpybnRrdGttbmthcHhva295aHdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMwMTU2OTMsImV4cCI6MjA1ODU5MTY5M30.FU6QCYxXR6kQq2FczjQ6vgSB57mno3CPdO43JTQleRI';
+        
+        // Supabase istemcisi
+        const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+        
+        // Test fonksiyonu
+        async function testConnection() {
+            try {
+                // Supabase'e basit bir sorgu gönder
+                const { data, error } = await supabase.auth.getSession();
+                
+                if (error) {
+                    document.getElementById('result').innerHTML = `
+                        <div style="color: red">
+                            <h2>Bağlantı Hatası</h2>
+                            <p>Hata: ${error.message}</p>
+                        </div>
+                    `;
+                } else {
+                    document.getElementById('result').innerHTML = `
+                        <div style="color: green">
+                            <h2>Bağlantı Başarılı</h2>
+                            <p>Sunucu yanıt verdi!</p>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (err) {
+                document.getElementById('result').innerHTML = `
+                    <div style="color: red">
+                        <h2>Beklenmeyen Hata</h2>
+                        <p>Hata: ${err.message}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // Sayfa yüklendiğinde testi çalıştır
+        window.onload = testConnection;
+    </script>
+</body>
+</html> 

@@ -1,204 +1,125 @@
-# Stok Takip Sistemi
+<div align="center">
+  <img src="https://raw.githubusercontent.com/supabase/supabase/master/apps/docs/public/img/supabase-logo.svg" width="120" alt="Supabase Logo" />
+  
+  <h1>📦 Stok Takip Sistemi</h1>
+  <p>Supabase + React ile modern, güvenli ve hızlı stok yönetimi</p>
+  <br/>
+  <img src="docs/screenshots/dashboard.png" width="80%" alt="Dashboard Screenshot"/>
+  <br/>
+  <i>Görsel: Uygulama ana ekranı (örnek)</i>
+</div>
 
-Bu proje, Supabase kullanarak geliştirilen modern bir stok takip uygulamasıdır. Ürün girişi, stok takibi ve raporlama işlemlerini kolaylıkla yapmanızı sağlar.
+---
 
-## Teknolojiler
+## 🚀 Proje Hakkında
+
+**Stok Takip Sistemi**, işletmelerin ürün, stok ve hareketlerini kolayca yönetebilmesi için geliştirilmiş, bulut tabanlı ve kullanıcı dostu bir web uygulamasıdır. Supabase altyapısı sayesinde gerçek zamanlı veri, güvenli kimlik doğrulama ve hızlı geliştirme imkanı sunar.
+
+---
+
+## 🛠️ Kullanılan Teknolojiler
 
 - **Frontend:** React, TypeScript, Material UI
-- **Backend:** [Supabase](https://supabase.com) (Backend-as-a-Service)
-- **Veritabanı:** PostgreSQL (Supabase tarafından yönetilen)
+- **Backend:** [Supabase](https://supabase.com) (BaaS)
+- **Veritabanı:** PostgreSQL (Supabase ile yönetilen)
 - **Kimlik Doğrulama:** Supabase Auth
 
-## Özellikler
+---
 
-- **🔐 Kullanıcı Kimlik Doğrulama**
-  - Supabase Auth ile güvenli giriş ve kayıt
-  - Rol tabanlı yetkilendirme
-  - Oturum yönetimi
+## 🎯 Temel Özellikler
 
-- **📦 Ürün Yönetimi**
-  - Ürün ekleme, düzenleme ve silme
-  - Kategorilere göre sınıflandırma
-  - Detaylı ürün bilgileri (kod, isim, fiyat, stok miktarı)
+- 🔐 **Kullanıcı Girişi & Rol Yönetimi**
+- 📦 **Ürün ve Kategori Yönetimi**
+- 📊 **Stok Girişi/Çıkışı & Hareket Takibi**
+- ⚠️ **Kritik Stok ve Son Kullanım Tarihi Uyarıları**
+- 📈 **Dashboard & Raporlama**
+- 🔎 **Filtreleme, Arama ve Detaylı Listeleme**
+- 📝 **Kolay Kurulum & Açık Kaynak Kod**
 
-- **📊 Stok İşlemleri**
-  - Stok girişi ve çıkışı
-  - Otomatik stok güncellemesi
-  - Kritik stok seviyesi takibi
-  - Stok hareketi geçmişi
+---
 
-- **🔍 Dashboard ve Raporlama**
-  - Genel durum özeti
-  - Kritik stok seviyesindeki ürünler
-  - Toplam ürün değeri
-  - Filtreleme ve arama özellikleri
+## 🖥️ Ekran Görüntüleri
 
-## Supabase Entegrasyonu
+> 📸 **Not:** Kendi ekran görüntülerinizi `docs/screenshots/` klasörüne ekleyin ve aşağıdaki alanı güncelleyin.
 
-Bu proje, backend işlemleri için tamamen Supabase kullanmaktadır:
+| Dashboard | Ürün Listesi | Stok Hareketleri |
+|-----------|--------------|------------------|
+| ![](docs/screenshots/dashboard.png) | ![](docs/screenshots/products.png) | ![](docs/screenshots/stock-movements.png) |
 
-### 1. Kimlik Doğrulama (Authentication)
+---
 
-```typescript
-// Kullanıcı girişi
+## ⚡️ Hızlı Başlangıç
+
+```bash
+# 1. Repoyu klonlayın
+$ git clone https://github.com/canakboyraz/Stok-Takip-Et.git
+$ cd Stok-Takip-Et
+
+# 2. Bağımlılıkları yükleyin
+$ npm install
+
+# 3. Ortam değişkenlerini ayarlayın
+$ cp .env.example .env
+# .env dosyasını Supabase bilgilerinize göre doldurun
+
+# 4. Uygulamayı başlatın
+$ npm start
+```
+
+---
+
+## 🔗 Supabase Entegrasyonu
+
+### Kimlik Doğrulama
+```ts
 const { data, error } = await supabase.auth.signInWithPassword({
   email: 'user@example.com',
   password: 'password123'
 });
-
-// Kullanıcı kaydı
-const { data, error } = await supabase.auth.signUp({
-  email: 'newuser@example.com',
-  password: 'password123'
-});
-
-// Çıkış yapma
-const { error } = await supabase.auth.signOut();
 ```
 
-### 2. Veritabanı İşlemleri
-
-```typescript
-// Veri çekme
+### Ürün Sorgulama
+```ts
 const { data, error } = await supabase
   .from('products')
   .select('*')
   .order('created_at', { ascending: false });
-
-// Veri ekleme
-const { data, error } = await supabase
-  .from('products')
-  .insert([{ name: 'Yeni Ürün', price: 99.99, stock_quantity: 10 }])
-  .select();
-
-// Veri güncelleme
-const { error } = await supabase
-  .from('products')
-  .update({ stock_quantity: 15 })
-  .eq('id', 1);
 ```
 
-### 3. Row Level Security (RLS)
-
-Supabase'in güçlü RLS özelliği sayesinde veritabanı seviyesinde güvenlik sağlanmıştır:
-
+### RLS Politikası (Örnek)
 ```sql
--- Ürünler tablosu için giriş yapmış kullanıcıların erişimine izin verilir
 create policy "Products are viewable by authenticated users"
   on products for select
   to authenticated
   using (true);
-
--- Stok hareketleri kayıtları, sadece ilgili kullanıcılar tarafından görüntülenebilir
-create policy "Stock movements are viewable by authenticated users"
-  on stock_movements for select
-  to authenticated
-  using (true);
 ```
-
-## Kurulum
-
-1. Projeyi klonlayın:
-```bash
-git clone https://github.com/kullaniciadi/stok-takip.git
-cd stok-takip
-```
-
-2. Bağımlılıkları yükleyin:
-```bash
-npm install
-```
-
-3. `.env` dosyasını oluşturun:
-```
-REACT_APP_SUPABASE_URL=your_supabase_url
-REACT_APP_SUPABASE_ANON_KEY=your_supabase_anon_key
-```
-
-4. Supabase projenizi hazırlayın:
-   - Supabase'de yeni bir proje oluşturun
-   - SQL editöründe aşağıdaki tabloları oluşturun
-   - Authentication ayarlarından email girişlerini etkinleştirin
-
-```sql
--- Products tablosu
-create table products (
-  id bigint generated by default as identity primary key,
-  name text not null,
-  code text not null unique,
-  category text not null,
-  price decimal(10,2) not null,
-  stock_quantity integer not null default 0,
-  min_stock_level integer not null default 0,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
-);
-
--- Stock Movements tablosu
-create table stock_movements (
-  id bigint generated by default as identity primary key,
-  product_id bigint references products(id) not null,
-  type text not null check (type in ('in', 'out')),
-  quantity integer not null,
-  date timestamp with time zone default timezone('utc'::text, now()) not null,
-  user_id uuid references auth.users(id),
-  notes text
-);
-
--- Row Level Security etkinleştirme
-alter table products enable row level security;
-alter table stock_movements enable row level security;
-
--- RLS Politikaları
-create policy "Products are viewable by authenticated users"
-  on products for select
-  to authenticated
-  using (true);
-
-create policy "Products are insertable by authenticated users"
-  on products for insert
-  to authenticated
-  with check (true);
-
-create policy "Products are updatable by authenticated users"
-  on products for update
-  to authenticated
-  using (true);
-
-create policy "Stock movements are viewable by authenticated users"
-  on stock_movements for select
-  to authenticated
-  using (true);
-
-create policy "Stock movements are insertable by authenticated users"
-  on stock_movements for insert
-  to authenticated
-  with check (true);
-```
-
-5. Uygulamayı başlatın:
-```bash
-npm start
-```
-
-## Ekran Görüntüleri
-
-*Ekran görüntüleri eklenecek*
-
-## Supabase'in Avantajları
-
-- **Hızlı Geliştirme:** Backend için kod yazmaya gerek kalmadan API'ler hazır
-- **Gerçek Zamanlı Veri:** Otomatik olarak sağlanan gerçek zamanlı veri akışı
-- **PostgreSQL Gücü:** Tam özellikli PostgreSQL veritabanı
-- **Güvenli Kimlik Doğrulama:** Hazır kimlik doğrulama sistemi
-- **Row Level Security:** Veritabanı seviyesinde güvenlik
-
-## Lisans
-
-MIT
 
 ---
 
-Geliştirici: [Adınız](https://github.com/kullaniciadi)
+## 📚 Kurulum Detayları
 
-Supabase ile geliştirilmiştir ❤️ 
+1. **Supabase Projesi Oluşturun**
+2. **Tabloları ve RLS Politikalarını Ekleyin** (örnek SQL yukarıda)
+3. **.env dosyasını doldurun**
+4. **npm install & npm start**
+
+---
+
+## 💡 Supabase Avantajları
+
+- Gerçek zamanlı veri
+- Otomatik API ve Auth
+- PostgreSQL gücü
+- Row Level Security
+- Hızlı prototipleme
+
+---
+
+## 👤 Geliştirici & Lisans
+
+- Geliştirici: [canakboyraz](https://github.com/canakboyraz)
+- Lisans: MIT
+
+<div align="center">
+  <sub>Supabase ile geliştirilmiştir ❤️</sub>
+</div> 

@@ -1,0 +1,29 @@
+{
+  "memoryBank": {
+    "command": "node",
+    "args": ["C:\\Users\\CANAKBOYRAZ\\Desktop\\Cursor\\SuperBase\\stok-takip\\memory-bank-MCP-main\\dist\\index.js"],
+    "env": {
+      "GEMINI_API_KEY": "AIzaSyCZOfF2IqYaAys7ot9euwZrurKVb_MP3H8"
+    }
+  },
+  "mcpServers": {
+    "memorybank": {
+      "command": "node",
+      "args": ["C:\\Users\\CANAKBOYRAZ\\Desktop\\Cursor\\SuperBase\\stok-takip\\memory-bank-MCP-main\\dist\\index.js"],
+      "env": {
+        "GEMINI_API_KEY": "AIzaSyCZOfF2IqYaAys7ot9euwZrurKVb_MP3H8"
+      }
+    },
+    "supabase": {
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@supabase/mcp-server-supabase@latest",
+        "--access-token",
+        "sbp_9d395c5fccc8e37dd98cff3ecb962d41072a1941"
+      ]
+    }
+  }
+} 

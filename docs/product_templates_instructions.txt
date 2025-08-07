@@ -1,0 +1,33 @@
+ÜRÜN ŞABLONLARI KURULUM TALİMATLARI
+===============================
+
+Sorun: Ürün adı alanında önceden tanımlanmış ürün isimleri görüntülenemiyor.
+
+Çözüm adımları:
+
+1. Supabase SQL Editöründe product_templates.sql dosyasının çalıştırıldığından emin olun. 
+   Dosya yolu: stok-takip/docs/product_templates.sql
+
+2. SQL başarıyla çalıştıktan sonra, Supabase arayüzünde "Table Editor" bölümünde 
+   "product_templates" adlı bir tablo ve içinde sebze isimleri olduğunu doğrulayın.
+
+3. ProductNameComboBox bileşeni güncellendi ve şu anda doğrudan tablodan veri çekiyor.
+   Ayrıca, tablo verileri yüklenemese bile varsayılan bir sebze listesi görüntülenecek.
+
+4. Uygulamayı yeniden başlatın. Console mesajlarında aşağıdaki adımları takip edin:
+   - "📋 Ürün şablonları yükleniyor..." mesajını görmelisiniz
+   - "✅ Yüklenen ürün şablonları:" ve ardından veri listesini görmelisiniz
+   - Hata görürseniz, "❌ Ürün şablonları yüklenirken hata:" mesajını kontrol edin
+   - Veri yüklenemediyse "⚠️ Şablonlar yüklenemedi, varsayılan değerler kullanılıyor" mesajı görünecek
+
+5. Product tablosu RLS politikalarının uygun şekilde ayarlandığından emin olun.
+   Şu policy eklenmiş olmalı: "Herkes ürün şablonlarını görebilir"
+
+SORUN DEVAM EDERSE:
+
+1. Supabase üzerinde API ayarlarını kontrol edin, anon key'in tabloyu okuma izni olduğundan emin olun
+2. RLS politikalarını kontrol edin
+3. Tarayıcı konsolunda ürün şablonları yüklenirken oluşan hataları kontrol edin
+
+NOT: Ürün ekleme formu açıldığında, tarayıcı konsolunda (F12) log mesajlarını kontrol edin. 
+Bu mesajlar sorunun kaynağını belirlemenize yardımcı olacaktır. 
