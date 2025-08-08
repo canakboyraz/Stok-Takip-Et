@@ -41,7 +41,7 @@ import {
   Event as EventIcon,
   Restaurant as RestaurantIcon,
   MenuBook as MenuBookIcon,
-  Add as AddIcon,
+
   ShoppingCart as ShoppingCartIcon,
   Timeline as TimelineIcon,
   Undo as UndoIcon,
@@ -104,7 +104,8 @@ const Layout = ({ children }: LayoutProps) => {
     
     // Cleanup
     return () => window.removeEventListener('resize', handleResize);
-  }, []); // Boş dependency array
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Boş dependency array - sadece mount'ta çalışsın
 
   const loadUserInfo = async () => {
     try {
@@ -676,6 +677,19 @@ const Layout = ({ children }: LayoutProps) => {
             sm: drawerOpen ? `${drawerWidth}px` : 0 
           },
           transition: 'margin-left 0.3s ease',
+        }}
+        onClick={(e) => {
+          // Ana içerik alanına tıklanınca sidebar'ı kapat (desktop'ta)
+          // Sadece mouse click event'lerini dinle, keyboard navigation'ı etkilemesin
+          if (drawerOpen && window.innerWidth >= 900) {
+            // Eğer tıklanan element bir button, input, select vs. değilse sidebar'ı kapat
+            const target = e.target as HTMLElement;
+            const isInteractiveElement = target.closest('button, input, select, textarea, [role="button"], [role="menuitem"], a, .MuiDialog-root, .MuiMenu-root, .MuiPopover-root');
+            
+            if (!isInteractiveElement) {
+              setDrawerOpen(false);
+            }
+          }
         }}
       >
         {children}

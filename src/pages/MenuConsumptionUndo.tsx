@@ -171,6 +171,43 @@ const MenuConsumptionUndo = () => {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData?.user) throw new Error('Kullanıcı bilgisi alınamadı');
 
+      // Eğer operationDetails boşsa, önce detayları yükle
+      let detailsToProcess = operationDetails;
+      if (detailsToProcess.length === 0) {
+        console.log('Operation details boş, yükleniyor...');
+        
+        const { data, error } = await supabase
+          .from('stock_movements')
+          .select(`
+            id,
+            product_id,
+            quantity,
+            products:products (
+              id,
+              name,
+              stock_quantity
+            )
+          `)
+          .eq('bulk_id', selectedOperation.bulk_id.toString())
+          .eq('is_reversed', false);
+
+        if (error) throw error;
+
+        detailsToProcess = data?.map((item: any) => ({
+          id: item.id,
+          product_id: item.product_id,
+          quantity: item.quantity,
+          product_name: item.products?.name || 'Bilinmeyen Ürün',
+          current_stock: item.products?.stock_quantity || 0,
+        })) || [];
+
+        console.log('Yüklenen detaylar:', detailsToProcess);
+      }
+
+      if (detailsToProcess.length === 0) {
+        throw new Error('Bu işlem için stok hareketi detayları bulunamadı');
+      }
+
       // 1. Bulk movement'ı geri alındı olarak işaretle
       const { error: bulkError } = await supabase
         .from('bulk_movements')
@@ -198,15 +235,25 @@ const MenuConsumptionUndo = () => {
       if (stockError) throw stockError;
 
       // 3. Stok miktarlarını geri yükle
-      for (const detail of operationDetails) {
+      console.log(`${detailsToProcess.length} ürün için stok geri yüklenecek`);
+      for (const detail of detailsToProcess) {
+        const newStockQuantity = detail.current_stock + detail.quantity;
+        console.log(`${detail.product_name}: ${detail.current_stock} + ${detail.quantity} = ${newStockQuantity}`);
+        
         const { error: updateError } = await supabase
           .from('products')
           .update({
-            stock_quantity: detail.current_stock + detail.quantity, // Çıkış işlemi geri alınıyor, stok geri ekleniyor
+            stock_quantity: newStockQuantity, // Çıkış işlemi geri alınıyor, stok geri ekleniyor
           })
-          .eq('id', detail.product_id);
+          .eq('id', detail.product_id)
+          .eq('project_id', selectedOperation.project_id); // Proje kontrolü ekle
 
-        if (updateError) throw updateError;
+        if (updateError) {
+          console.error(`Ürün ${detail.product_name} için stok güncellenirken hata:`, updateError);
+          throw updateError;
+        }
+        
+        console.log(`✅ ${detail.product_name} stoğu güncellendi: ${newStockQuantity}`);
       }
 
       setSuccess(`${selectedOperation.notes} işlemi başarıyla geri alındı! Stoklar geri yüklendi.`);
