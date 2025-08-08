@@ -8,6 +8,7 @@ export type ActivityType =
   | 'stock_transfer'
   | 'stock_adjustment'
   | 'stock_bulk_update'
+  | 'stock_bulk_out'
   
   // Ürün işlemleri
   | 'product_create'
@@ -31,11 +32,25 @@ export type ActivityType =
   | 'menu_create'
   | 'menu_update'
   | 'menu_delete'
+  | 'menu_consumption'
+  | 'menu_consumption_undo'
   
   // Personel işlemleri
   | 'personnel_create'
   | 'personnel_update'
   | 'personnel_delete'
+  
+  // Gider işlemleri
+  | 'expense_create'
+  | 'expense_update'
+  | 'expense_delete'
+  
+  // Sistem işlemleri
+  | 'user_login'
+  | 'user_logout'
+  | 'system_backup'
+  | 'data_export'
+  | 'data_import'
   
   // Proje işlemleri
   | 'project_create'
@@ -50,9 +65,12 @@ export type EntityType =
   | 'recipe'
   | 'menu'
   | 'stock_movement'
+  | 'bulk_movement'
   | 'personnel'
+  | 'expense'
   | 'project'
-  | 'user_permission';
+  | 'user_permission'
+  | 'system';
 
 /**
  * Etkinlik kaydı ekleyen fonksiyon
@@ -143,6 +161,7 @@ export const getActivityTypeLabel = (type: ActivityType): string => {
     stock_transfer: 'Stok Transferi',
     stock_adjustment: 'Stok Düzeltme',
     stock_bulk_update: 'Toplu Stok Güncelleme',
+    stock_bulk_out: 'Toplu Stok Çıkışı',
     
     product_create: 'Ürün Ekleme',
     product_update: 'Ürün Güncelleme',
@@ -162,10 +181,22 @@ export const getActivityTypeLabel = (type: ActivityType): string => {
     menu_create: 'Menü Ekleme',
     menu_update: 'Menü Güncelleme',
     menu_delete: 'Menü Silme',
+    menu_consumption: 'Menü Tüketimi',
+    menu_consumption_undo: 'Menü Tüketimi Geri Alma',
     
     personnel_create: 'Personel Ekleme',
     personnel_update: 'Personel Güncelleme',
     personnel_delete: 'Personel Silme',
+    
+    expense_create: 'Gider Ekleme',
+    expense_update: 'Gider Güncelleme',
+    expense_delete: 'Gider Silme',
+    
+    user_login: 'Kullanıcı Girişi',
+    user_logout: 'Kullanıcı Çıkışı',
+    system_backup: 'Sistem Yedeği',
+    data_export: 'Veri Dışa Aktarma',
+    data_import: 'Veri İçe Aktarma',
     
     project_create: 'Proje Oluşturma',
     project_update: 'Proje Güncelleme',
@@ -187,9 +218,12 @@ export const getEntityTypeLabel = (type: EntityType): string => {
     recipe: 'Tarif',
     menu: 'Menü',
     stock_movement: 'Stok Hareketi',
+    bulk_movement: 'Toplu İşlem',
     personnel: 'Personel',
+    expense: 'Gider',
     project: 'Proje',
-    user_permission: 'Kullanıcı İzni'
+    user_permission: 'Kullanıcı İzni',
+    system: 'Sistem'
   };
   
   return labels[type] || 'Bilinmeyen Varlık Tipi';

@@ -19,6 +19,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { Product } from '../types/database';
+import { logActivity } from '../lib/activityLogger';
 
 interface SelectedProduct extends Product {
   quantity: number;
@@ -283,6 +284,16 @@ const BulkStockOut = () => {
       }
 
       console.log(`Bulk stock out completed with ID ${bulkId} and total cost ${totalCost}`);
+      
+      // Etkinlik kaydı ekle
+      const productNames = selectedProducts.map(p => p.name).join(', ');
+      await logActivity(
+        'stock_bulk_out',
+        `Toplu stok çıkışı - ${selectedProducts.length} ürün (${productNames}) - Toplam: ${totalCost.toFixed(2)} ₺`,
+        'bulk_movement',
+        bulkId
+      );
+      
       setSuccess('Stok çıkışı başarıyla tamamlandı');
       
       // Stok hareketleri sayfasına yönlendir

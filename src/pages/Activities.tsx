@@ -60,6 +60,7 @@ const Activities = () => {
   const [actionTypeFilter, setActionTypeFilter] = useState<string>('all');
   const [userFilter, setUserFilter] = useState<string>('all');
   const [uniqueUsers, setUniqueUsers] = useState<string[]>([]);
+  const [dateFilter, setDateFilter] = useState<string>('all');
 
   // Etkinlik kayıtlarını fetch et
   const fetchActivities = async () => {
@@ -126,12 +127,18 @@ const Activities = () => {
         return <DescriptionIcon />;
       case 'stock_movement':
         return <InventoryIcon />;
+      case 'bulk_movement':
+        return <InventoryIcon />;
       case 'personnel':
         return <PeopleIcon />;
+      case 'expense':
+        return <DescriptionIcon />;
       case 'project':
         return <FolderIcon />;
       case 'user_permission':
         return <PersonIcon />;
+      case 'system':
+        return <DescriptionIcon />;
       default:
         return <DescriptionIcon />;
     }
@@ -159,6 +166,10 @@ const Activities = () => {
     setUserFilter(event.target.value);
   };
 
+  const handleDateFilterChange = (event: SelectChangeEvent) => {
+    setDateFilter(event.target.value);
+  };
+
   // Filtrelenmiş aktiviteler
   const filteredActivities = activities.filter(activity => {
     // Arama teriminde filtre
@@ -182,7 +193,24 @@ const Activities = () => {
       userFilter === 'all' || 
       activity.user_email === userFilter;
 
-    return matchesSearch && matchesEntityType && matchesActionType && matchesUser;
+    // Tarih filtresi
+    const now = new Date();
+    const activityDate = new Date(activity.created_at);
+    let matchesDate = true;
+    
+    if (dateFilter === 'today') {
+      matchesDate = activityDate.toDateString() === now.toDateString();
+    } else if (dateFilter === 'week') {
+      const weekAgo = new Date();
+      weekAgo.setDate(now.getDate() - 7);
+      matchesDate = activityDate >= weekAgo;
+    } else if (dateFilter === 'month') {
+      const monthAgo = new Date();
+      monthAgo.setMonth(now.getMonth() - 1);
+      matchesDate = activityDate >= monthAgo;
+    }
+
+    return matchesSearch && matchesEntityType && matchesActionType && matchesUser && matchesDate;
   });
 
   return (
@@ -200,7 +228,7 @@ const Activities = () => {
 
       <Paper sx={{ p: 2, mb: 3 }}>
         <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} md={4}>
+          <Grid item xs={12} md={3}>
             <TextField
               fullWidth
               label="Ara"
@@ -209,6 +237,22 @@ const Activities = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Açıklama veya kullanıcı e-postasında ara"
             />
+          </Grid>
+          <Grid item xs={12} md={2}>
+            <FormControl fullWidth>
+              <InputLabel id="date-filter-label">Tarih</InputLabel>
+              <Select
+                labelId="date-filter-label"
+                value={dateFilter}
+                label="Tarih"
+                onChange={handleDateFilterChange}
+              >
+                <MenuItem value="all">Tüm Zamanlar</MenuItem>
+                <MenuItem value="today">Bugün</MenuItem>
+                <MenuItem value="week">Son 7 Gün</MenuItem>
+                <MenuItem value="month">Son 30 Gün</MenuItem>
+              </Select>
+            </FormControl>
           </Grid>
           <Grid item xs={12} md={2}>
             <FormControl fullWidth>
@@ -226,9 +270,12 @@ const Activities = () => {
                 <MenuItem value="recipe">Tarif</MenuItem>
                 <MenuItem value="menu">Menü</MenuItem>
                 <MenuItem value="stock_movement">Stok Hareketi</MenuItem>
+                <MenuItem value="bulk_movement">Toplu İşlem</MenuItem>
                 <MenuItem value="personnel">Personel</MenuItem>
+                <MenuItem value="expense">Gider</MenuItem>
                 <MenuItem value="project">Proje</MenuItem>
                 <MenuItem value="user_permission">Kullanıcı İzni</MenuItem>
+                <MenuItem value="system">Sistem</MenuItem>
               </Select>
             </FormControl>
           </Grid>
@@ -246,15 +293,27 @@ const Activities = () => {
                 <MenuItem value="stock_remove">Stok Çıkışı</MenuItem>
                 <MenuItem value="stock_update">Stok Güncelleme</MenuItem>
                 <MenuItem value="stock_bulk_update">Toplu Stok Güncelleme</MenuItem>
+                <MenuItem value="stock_bulk_out">Toplu Stok Çıkışı</MenuItem>
                 <MenuItem value="product_create">Ürün Ekleme</MenuItem>
                 <MenuItem value="product_update">Ürün Güncelleme</MenuItem>
                 <MenuItem value="product_delete">Ürün Silme</MenuItem>
+                <MenuItem value="category_create">Kategori Ekleme</MenuItem>
+                <MenuItem value="category_update">Kategori Güncelleme</MenuItem>
+                <MenuItem value="category_delete">Kategori Silme</MenuItem>
                 <MenuItem value="recipe_create">Tarif Ekleme</MenuItem>
                 <MenuItem value="recipe_update">Tarif Güncelleme</MenuItem>
                 <MenuItem value="recipe_delete">Tarif Silme</MenuItem>
                 <MenuItem value="menu_create">Menü Ekleme</MenuItem>
                 <MenuItem value="menu_update">Menü Güncelleme</MenuItem>
                 <MenuItem value="menu_delete">Menü Silme</MenuItem>
+                <MenuItem value="menu_consumption">Menü Tüketimi</MenuItem>
+                <MenuItem value="menu_consumption_undo">Menü Tüketimi Geri Alma</MenuItem>
+                <MenuItem value="personnel_create">Personel Ekleme</MenuItem>
+                <MenuItem value="personnel_update">Personel Güncelleme</MenuItem>
+                <MenuItem value="personnel_delete">Personel Silme</MenuItem>
+                <MenuItem value="expense_create">Gider Ekleme</MenuItem>
+                <MenuItem value="expense_update">Gider Güncelleme</MenuItem>
+                <MenuItem value="expense_delete">Gider Silme</MenuItem>
               </Select>
             </FormControl>
           </Grid>

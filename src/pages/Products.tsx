@@ -31,6 +31,7 @@ import {
 import { Delete as DeleteIcon, Edit as EditIcon, ExpandMore as ExpandMoreIcon, Search as SearchIcon } from '@mui/icons-material';
 import { supabase } from '../lib/supabase';
 import { Product, Category } from '../types/database';
+import { logActivity } from '../lib/activityLogger';
 
 const Products = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -189,6 +190,15 @@ const Products = () => {
           .eq('project_id', currentProjectId);
 
         if (error) throw error;
+        
+        // Etkinlik kaydı ekle
+        await logActivity(
+          'product_update',
+          `Ürün güncellendi: ${newProduct.name} (Kategori: ${categories.find(c => c.id === newProduct.category_id)?.name})`,
+          'product',
+          editingProduct.id
+        );
+        
         setSnackbar({
           open: true,
           message: 'Ürün başarıyla güncellendi!',
@@ -208,6 +218,15 @@ const Products = () => {
           }]);
 
         if (error) throw error;
+        
+        // Etkinlik kaydı ekle
+        await logActivity(
+          'product_create',
+          `Yeni ürün eklendi: ${newProduct.name} (Kategori: ${categories.find(c => c.id === newProduct.category_id)?.name})`,
+          'product',
+          null
+        );
+        
         setSnackbar({
           open: true,
           message: 'Ürün başarıyla eklendi!',
@@ -237,6 +256,17 @@ const Products = () => {
           .eq('id', id);
 
         if (error) throw error;
+        
+        // Etkinlik kaydı ekle (ürün adını önceden al)
+        const productToDelete = products.find(p => p.id === id);
+        if (productToDelete) {
+          await logActivity(
+            'product_delete',
+            `Ürün silindi: ${productToDelete.name} (Kategori: ${productToDelete.category_name})`,
+            'product',
+            id
+          );
+        }
         
         setSnackbar({
           open: true,

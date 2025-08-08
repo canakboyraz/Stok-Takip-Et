@@ -26,6 +26,7 @@ import {
 import { supabase } from '../lib/supabase';
 import { Menu, Recipe } from '../types/database';
 import { useNavigate } from 'react-router-dom';
+import { logActivity } from '../lib/activityLogger';
 
 interface DetailedIngredient {
   product_id: number;
@@ -273,6 +274,14 @@ const MenuConsumption = () => {
 
         if (updateError) throw updateError;
       }
+
+      // Etkinlik kaydı ekle
+      await logActivity(
+        'menu_consumption',
+        `${selectedMenu?.name} menüsü - ${guestCount} kişi (${consumptionItems.length} ürün tüketildi, Toplam: ${totalCost.toFixed(2)} ₺)`,
+        'bulk_movement',
+        bulkId
+      );
 
       setSuccess(`Menü tüketimi başarıyla kaydedildi! ${guestCount} kişilik ${selectedMenu?.name} menüsü için stoklar güncellendi.`);
       setConfirmDialog(false);

@@ -34,6 +34,7 @@ import {
 } from '@mui/icons-material';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
+import { logActivity } from '../lib/activityLogger';
 
 interface ReversibleOperation {
   bulk_id: number;
@@ -255,6 +256,14 @@ const MenuConsumptionUndo = () => {
         
         console.log(`✅ ${detail.product_name} stoğu güncellendi: ${newStockQuantity}`);
       }
+
+      // Etkinlik kaydı ekle
+      await logActivity(
+        'menu_consumption_undo',
+        `${selectedOperation.notes} - ${detailsToProcess.length} ürün geri yüklendi. Neden: ${undoReason.trim()}`,
+        'bulk_movement',
+        selectedOperation.bulk_id
+      );
 
       setSuccess(`${selectedOperation.notes} işlemi başarıyla geri alındı! Stoklar geri yüklendi.`);
       setUndoDialog(false);
