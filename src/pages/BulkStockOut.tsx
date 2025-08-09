@@ -287,12 +287,21 @@ const BulkStockOut = () => {
       
       // Etkinlik kaydı ekle
       const productNames = selectedProducts.map(p => p.name).join(', ');
-      await logActivity(
+      console.log('🔍 BulkStockOut: Etkinlik kaydı ekleniyor...', {
+        type: 'stock_bulk_out',
+        description: `Toplu stok çıkışı - ${selectedProducts.length} ürün (${productNames}) - Toplam: ${totalCost.toFixed(2)} ₺`,
+        entity_type: 'bulk_movement',
+        entity_id: bulkId
+      });
+      
+      const activityResult = await logActivity(
         'stock_bulk_out',
         `Toplu stok çıkışı - ${selectedProducts.length} ürün (${productNames}) - Toplam: ${totalCost.toFixed(2)} ₺`,
         'bulk_movement',
         bulkId
       );
+      
+      console.log('🔍 BulkStockOut: Etkinlik kaydı sonucu:', activityResult);
       
       setSuccess('Stok çıkışı başarıyla tamamlandı');
       

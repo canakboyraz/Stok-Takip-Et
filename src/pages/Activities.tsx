@@ -24,7 +24,6 @@ import {
 } from '@mui/material';
 import { 
   Refresh as RefreshIcon, 
-  FilterList as FilterListIcon,
   Person as PersonIcon,
   Category as CategoryIcon,
   Restaurant as RestaurantIcon,
@@ -85,6 +84,9 @@ const Activities = () => {
       }
 
       if (data) {
+        console.log('🔍 Activities: Yüklenen etkinlik sayısı:', data.length);
+        console.log('🔍 Activities: İlk 3 etkinlik:', data.slice(0, 3));
+        
         setActivities(data as Activity[]);
         
         // Kullanıcı listesini al - Set yerine manuel tekrar kontrolü yapıyoruz

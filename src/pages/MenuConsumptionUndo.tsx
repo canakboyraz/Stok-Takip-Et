@@ -258,12 +258,21 @@ const MenuConsumptionUndo = () => {
       }
 
       // Etkinlik kaydı ekle
-      await logActivity(
+      console.log('🔍 MenuConsumptionUndo: Etkinlik kaydı ekleniyor...', {
+        type: 'menu_consumption_undo',
+        description: `${selectedOperation.notes} - ${detailsToProcess.length} ürün geri yüklendi. Neden: ${undoReason.trim()}`,
+        entity_type: 'bulk_movement',
+        entity_id: selectedOperation.bulk_id
+      });
+      
+      const activityResult = await logActivity(
         'menu_consumption_undo',
         `${selectedOperation.notes} - ${detailsToProcess.length} ürün geri yüklendi. Neden: ${undoReason.trim()}`,
         'bulk_movement',
         selectedOperation.bulk_id
       );
+      
+      console.log('🔍 MenuConsumptionUndo: Etkinlik kaydı sonucu:', activityResult);
 
       setSuccess(`${selectedOperation.notes} işlemi başarıyla geri alındı! Stoklar geri yüklendi.`);
       setUndoDialog(false);
