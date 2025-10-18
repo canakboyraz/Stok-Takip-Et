@@ -123,7 +123,7 @@ export const logActivity = async (
       action_type: activityType,
       action_description: description,
       entity_type: entityType,
-      entity_id: null, // Temporarily set to null to avoid integer overflow - TODO: Change DB column to bigint
+      entity_id: entityId, // Now using bigint column type
       user_email: userData.user.email,
       ip_address: ipAddress
     };
