@@ -123,12 +123,13 @@ export const logActivity = async (
       action_type: activityType,
       action_description: description,
       entity_type: entityType,
-      entity_id: entityId,
+      entity_id: null, // Temporarily set to null to avoid integer overflow - TODO: Change DB column to bigint
       user_email: userData.user.email,
       ip_address: ipAddress
     };
 
     console.log('📋 Activity data to be inserted:', activityData);
+    console.log('📋 Activity data JSON:', JSON.stringify(activityData, null, 2));
     
     // Etkinlik kaydını ekle
     console.log('💾 Inserting activity record...');
@@ -136,6 +137,10 @@ export const logActivity = async (
 
     if (error) {
       console.error('❌ Error inserting activity record:', error);
+      console.error('❌ Error details:', JSON.stringify(error, null, 2));
+      console.error('❌ Error code:', error.code);
+      console.error('❌ Error message:', error.message);
+      console.error('❌ Error hint:', error.hint);
       console.groupEnd();
       return false;
     }
