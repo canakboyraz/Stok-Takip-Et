@@ -257,22 +257,31 @@ const MenuConsumptionUndo = () => {
         console.log(`✅ ${detail.product_name} stoğu güncellendi: ${newStockQuantity}`);
       }
 
-      // Etkinlik kaydı ekle
-      console.log('🔍 MenuConsumptionUndo: Etkinlik kaydı ekleniyor...', {
-        type: 'menu_consumption_undo',
-        description: `${selectedOperation.notes} - ${detailsToProcess.length} ürün geri yüklendi. Neden: ${undoReason.trim()}`,
-        entity_type: 'bulk_movement',
-        entity_id: selectedOperation.bulk_id
-      });
-      
-      const activityResult = await logActivity(
-        'menu_consumption_undo',
-        `${selectedOperation.notes} - ${detailsToProcess.length} ürün geri yüklendi. Neden: ${undoReason.trim()}`,
-        'bulk_movement',
-        selectedOperation.bulk_id
-      );
-      
-      console.log('🔍 MenuConsumptionUndo: Etkinlik kaydı sonucu:', activityResult);
+      // Etkinlik kaydı ekle - Hata olsa bile geri alma işlemi tamamlanmış olsun
+      try {
+        console.log('🔍 MenuConsumptionUndo: Etkinlik kaydı ekleniyor...', {
+          type: 'menu_consumption_undo',
+          description: `${selectedOperation.notes} - ${detailsToProcess.length} ürün geri yüklendi. Neden: ${undoReason.trim()}`,
+          entity_type: 'bulk_movement',
+          entity_id: selectedOperation.bulk_id
+        });
+        
+        const activityResult = await logActivity(
+          'menu_consumption_undo',
+          `${selectedOperation.notes} - ${detailsToProcess.length} ürün geri yüklendi. Neden: ${undoReason.trim()}`,
+          'bulk_movement',
+          selectedOperation.bulk_id
+        );
+        
+        console.log('🔍 MenuConsumptionUndo: Etkinlik kaydı sonucu:', activityResult);
+        
+        if (!activityResult) {
+          console.warn('⚠️ Etkinlik kaydı başarısız oldu ama geri alma işlemi tamamlandı');
+        }
+      } catch (activityError) {
+        console.error('❌ Etkinlik kaydı hatası (geri alma başarılı):', activityError);
+        // Etkinlik kaydı hatası geri alma işlemini etkilememeli
+      }
 
       setSuccess(`${selectedOperation.notes} işlemi başarıyla geri alındı! Stoklar geri yüklendi.`);
       setUndoDialog(false);

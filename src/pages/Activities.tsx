@@ -87,6 +87,19 @@ const Activities = () => {
         console.log('🔍 Activities: Yüklenen etkinlik sayısı:', data.length);
         console.log('🔍 Activities: İlk 3 etkinlik:', data.slice(0, 3));
         
+        // Etkinlik türlerinin dağılımını göster
+        const activityTypes = data.reduce((acc: any, activity: any) => {
+          acc[activity.action_type] = (acc[activity.action_type] || 0) + 1;
+          return acc;
+        }, {});
+        console.log('🔍 Activities: Etkinlik türleri dağılımı:', activityTypes);
+        
+        // Son 5 etkinliği detaylı göster
+        console.log('🔍 Activities: Son 5 etkinlik detayları:');
+        data.slice(0, 5).forEach((activity: any, index: number) => {
+          console.log(`${index + 1}. ${activity.action_type} - ${activity.action_description} (${new Date(activity.created_at).toLocaleString()})`);
+        });
+        
         setActivities(data as Activity[]);
         
         // Kullanıcı listesini al - Set yerine manuel tekrar kontrolü yapıyoruz
@@ -222,9 +235,11 @@ const Activities = () => {
           Etkinlik Kayıtları
         </Typography>
         <Tooltip title="Yenile">
-          <IconButton onClick={fetchActivities} disabled={loading}>
-            <RefreshIcon />
-          </IconButton>
+          <span>
+            <IconButton onClick={fetchActivities} disabled={loading}>
+              <RefreshIcon />
+            </IconButton>
+          </span>
         </Tooltip>
       </Box>
 

@@ -192,12 +192,16 @@ const Products = () => {
         if (error) throw error;
         
         // Etkinlik kaydı ekle
-        await logActivity(
-          'product_update',
-          `Ürün güncellendi: ${newProduct.name} (Kategori: ${categories.find(c => c.id === newProduct.category_id)?.name})`,
-          'product',
-          editingProduct.id
-        );
+        try {
+          await logActivity(
+            'product_update',
+            `Ürün güncellendi: ${newProduct.name} (Kategori: ${categories.find(c => c.id === newProduct.category_id)?.name})`,
+            'product',
+            editingProduct.id
+          );
+        } catch (activityError) {
+          console.error('❌ Etkinlik kaydı hatası (ürün güncellendi):', activityError);
+        }
         
         setSnackbar({
           open: true,
@@ -220,12 +224,16 @@ const Products = () => {
         if (error) throw error;
         
         // Etkinlik kaydı ekle
-        await logActivity(
-          'product_create',
-          `Yeni ürün eklendi: ${newProduct.name} (Kategori: ${categories.find(c => c.id === newProduct.category_id)?.name})`,
-          'product',
-          null
-        );
+        try {
+          await logActivity(
+            'product_create',
+            `Yeni ürün eklendi: ${newProduct.name} (Kategori: ${categories.find(c => c.id === newProduct.category_id)?.name})`,
+            'product',
+            null
+          );
+        } catch (activityError) {
+          console.error('❌ Etkinlik kaydı hatası (ürün eklendi):', activityError);
+        }
         
         setSnackbar({
           open: true,
@@ -258,14 +266,18 @@ const Products = () => {
         if (error) throw error;
         
         // Etkinlik kaydı ekle (ürün adını önceden al)
-        const productToDelete = products.find(p => p.id === id);
-        if (productToDelete) {
-          await logActivity(
-            'product_delete',
-            `Ürün silindi: ${productToDelete.name} (Kategori: ${productToDelete.category_name})`,
-            'product',
-            id
-          );
+        try {
+          const productToDelete = products.find(p => p.id === id);
+          if (productToDelete) {
+            await logActivity(
+              'product_delete',
+              `Ürün silindi: ${productToDelete.name} (Kategori: ${productToDelete.category_name})`,
+              'product',
+              id
+            );
+          }
+        } catch (activityError) {
+          console.error('❌ Etkinlik kaydı hatası (ürün silindi):', activityError);
         }
         
         setSnackbar({

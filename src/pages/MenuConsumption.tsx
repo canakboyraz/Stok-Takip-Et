@@ -275,13 +275,23 @@ const MenuConsumption = () => {
         if (updateError) throw updateError;
       }
 
-      // Etkinlik kaydı ekle
-      await logActivity(
-        'menu_consumption',
-        `${selectedMenu?.name} menüsü - ${guestCount} kişi (${consumptionItems.length} ürün tüketildi, Toplam: ${totalCost.toFixed(2)} ₺)`,
-        'bulk_movement',
-        bulkId
-      );
+      // Etkinlik kaydı ekle - Hata olsa bile menü tüketimi tamamlanmış olsun
+      try {
+        console.log('🔍 MenuConsumption: Etkinlik kaydı ekleniyor...');
+        const activityResult = await logActivity(
+          'menu_consumption',
+          `${selectedMenu?.name} menüsü - ${guestCount} kişi (${consumptionItems.length} ürün tüketildi, Toplam: ${totalCost.toFixed(2)} ₺)`,
+          'bulk_movement',
+          bulkId
+        );
+        console.log('🔍 MenuConsumption: Etkinlik kaydı sonucu:', activityResult);
+        
+        if (!activityResult) {
+          console.warn('⚠️ Etkinlik kaydı başarısız oldu ama menü tüketimi tamamlandı');
+        }
+      } catch (activityError) {
+        console.error('❌ Etkinlik kaydı hatası (menü tüketimi başarılı):', activityError);
+      }
 
       setSuccess(`Menü tüketimi başarıyla kaydedildi! ${guestCount} kişilik ${selectedMenu?.name} menüsü için stoklar güncellendi.`);
       setConfirmDialog(false);

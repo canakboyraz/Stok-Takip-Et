@@ -285,23 +285,32 @@ const BulkStockOut = () => {
 
       console.log(`Bulk stock out completed with ID ${bulkId} and total cost ${totalCost}`);
       
-      // Etkinlik kaydı ekle
-      const productNames = selectedProducts.map(p => p.name).join(', ');
-      console.log('🔍 BulkStockOut: Etkinlik kaydı ekleniyor...', {
-        type: 'stock_bulk_out',
-        description: `Toplu stok çıkışı - ${selectedProducts.length} ürün (${productNames}) - Toplam: ${totalCost.toFixed(2)} ₺`,
-        entity_type: 'bulk_movement',
-        entity_id: bulkId
-      });
-      
-      const activityResult = await logActivity(
-        'stock_bulk_out',
-        `Toplu stok çıkışı - ${selectedProducts.length} ürün (${productNames}) - Toplam: ${totalCost.toFixed(2)} ₺`,
-        'bulk_movement',
-        bulkId
-      );
-      
-      console.log('🔍 BulkStockOut: Etkinlik kaydı sonucu:', activityResult);
+      // Etkinlik kaydı ekle - Hata olsa bile stok işlemi tamamlanmış olsun
+      try {
+        const productNames = selectedProducts.map(p => p.name).join(', ');
+        console.log('🔍 BulkStockOut: Etkinlik kaydı ekleniyor...', {
+          type: 'stock_bulk_out',
+          description: `Toplu stok çıkışı - ${selectedProducts.length} ürün (${productNames}) - Toplam: ${totalCost.toFixed(2)} ₺`,
+          entity_type: 'bulk_movement',
+          entity_id: bulkId
+        });
+        
+        const activityResult = await logActivity(
+          'stock_bulk_out',
+          `Toplu stok çıkışı - ${selectedProducts.length} ürün (${productNames}) - Toplam: ${totalCost.toFixed(2)} ₺`,
+          'bulk_movement',
+          bulkId
+        );
+        
+        console.log('🔍 BulkStockOut: Etkinlik kaydı sonucu:', activityResult);
+        
+        if (!activityResult) {
+          console.warn('⚠️ Etkinlik kaydı başarısız oldu ama stok işlemi tamamlandı');
+        }
+      } catch (activityError) {
+        console.error('❌ Etkinlik kaydı hatası (stok işlemi başarılı):', activityError);
+        // Etkinlik kaydı hatası stok işlemini etkilememeli
+      }
       
       setSuccess('Stok çıkışı başarıyla tamamlandı');
       
