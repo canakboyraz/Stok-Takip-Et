@@ -27,6 +27,7 @@ import { supabase } from '../lib/supabase';
 import { Menu, Recipe } from '../types/database';
 import { useNavigate } from 'react-router-dom';
 import { logActivity } from '../lib/activityLogger';
+import { logger } from '../utils/logger';
 
 interface DetailedIngredient {
   product_id: number;
@@ -277,20 +278,20 @@ const MenuConsumption = () => {
 
       // Etkinlik kaydı ekle - Hata olsa bile menü tüketimi tamamlanmış olsun
       try {
-        console.log('🔍 MenuConsumption: Etkinlik kaydı ekleniyor...');
+        logger.log('🔍 MenuConsumption: Etkinlik kaydı ekleniyor...');
         const activityResult = await logActivity(
           'menu_consumption',
           `${selectedMenu?.name} menüsü - ${guestCount} kişi (${consumptionItems.length} ürün tüketildi, Toplam: ${totalCost.toFixed(2)} ₺)`,
           'bulk_movement',
           bulkId
         );
-        console.log('🔍 MenuConsumption: Etkinlik kaydı sonucu:', activityResult);
-        
+        logger.log('🔍 MenuConsumption: Etkinlik kaydı sonucu:', activityResult);
+
         if (!activityResult) {
-          console.warn('⚠️ Etkinlik kaydı başarısız oldu ama menü tüketimi tamamlandı');
+          logger.warn('⚠️ Etkinlik kaydı başarısız oldu ama menü tüketimi tamamlandı');
         }
       } catch (activityError) {
-        console.error('❌ Etkinlik kaydı hatası (menü tüketimi başarılı):', activityError);
+        logger.error('❌ Etkinlik kaydı hatası (menü tüketimi başarılı):', activityError);
       }
 
       setSuccess(`Menü tüketimi başarıyla kaydedildi! ${guestCount} kişilik ${selectedMenu?.name} menüsü için stoklar güncellendi.`);
