@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import {
-import { logger } from '../utils/logger';
   Container,
   Grid,
   Paper,
@@ -15,24 +14,23 @@ import { logger } from '../utils/logger';
   Alert,
   CircularProgress,
 } from '@mui/material';
-import { supabase } from '../lib/supabase';
 import { Product } from '../types/database';
-import { handleError, getErrorMessage } from '../utils/errorHandler';
-import { UI_CONSTANTS, DB_TABLES, CURRENCY, DATE_FORMATS } from '../utils/constants';
+import { UI_CONSTANTS, CURRENCY } from '../utils/constants';
 import useLocalStorage from '../hooks/useLocalStorage';
 import { logger } from '../utils/logger';
+import { ProductService } from '../services/productService';
+import { useErrorHandler } from '../hooks/useErrorHandler';
 
 const Dashboard = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState({
     totalProducts: 0,
     expiringProducts: 0,
     totalValue: 0,
   });
 
-  // localStorage hook kullanımı
+  const { error, showError, clearError } = useErrorHandler();
   const [currentProjectId] = useLocalStorage<string | null>('currentProjectId', null);
 
   const isExpiringProduct = (expiryDate: string | null) => {
@@ -71,41 +69,29 @@ const Dashboard = () => {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      setError(null);
-      
-      if (!currentProjectId) {
-        throw new Error('Proje seçilmemiş. Lütfen bir proje seçin.');
-      }
-      
-      logger.log(`Fetching products for project ID: ${currentProjectId}`);
-      
-      const { data, error: supabaseError } = await supabase
-        .from(DB_TABLES.PRODUCTS)
-        .select(`
-          *,
-          categories (
-            name
-          )
-        `)
-        .eq('project_id', parseInt(currentProjectId))
-        .order('expiry_date', { ascending: true });
 
-      if (supabaseError) throw supabaseError;
-      
-      const productsWithCategory = (data || []).map(product => ({
-        ...product,
-        category_name: product.categories?.name
-      }));
-      
-      setProducts(productsWithCategory);
+      if (!currentProjectId) {
+        showError('Proje seçilmemiş. Lütfen bir proje seçin.');
+        return;
+      }
+
+      logger.log(`Fetching products for project ID: ${currentProjectId}`);
+
+      const data = await ProductService.getAll({
+        projectId: parseInt(currentProjectId),
+        sortBy: 'expiry_date',
+        sortOrder: 'asc'
+      });
+
+      setProducts(data);
 
       // Calculate statistics
-      const totalProducts = productsWithCategory.length;
-      const expiringProducts = productsWithCategory.filter(
+      const totalProducts = data.length;
+      const expiringProducts = data.filter(
         (p) => isExpiringProduct(p.expiry_date)
       ).length;
-      const totalValue = productsWithCategory.reduce(
-        (sum, p) => sum + p.price * p.stock_quantity, 
+      const totalValue = data.reduce(
+        (sum, p) => sum + p.price * p.stock_quantity,
         0
       );
 
@@ -115,9 +101,7 @@ const Dashboard = () => {
         totalValue,
       });
     } catch (err) {
-      const errorMessage = getErrorMessage(err);
-      setError(errorMessage);
-      logger.error('Dashboard error:', handleError(err));
+      showError(err);
     } finally {
       setLoading(false);
     }
@@ -138,8 +122,8 @@ const Dashboard = () => {
       </Typography>
 
       {error && (
-        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
-          {error}
+        <Alert severity="error" sx={{ mb: 3 }} onClose={clearError}>
+          {error.message}
         </Alert>
       )}
 
@@ -254,4 +238,4 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard; 
+export default Dashboard;
