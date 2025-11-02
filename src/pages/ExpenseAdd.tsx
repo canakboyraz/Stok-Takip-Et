@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-import { logger } from '../utils/logger';
   Container,
   Typography,
   Box,
@@ -12,142 +11,100 @@ import { logger } from '../utils/logger';
   CircularProgress,
   Snackbar
 } from '@mui/material';
-import { supabase } from '../lib/supabase';
-import { Expense } from '../types/database';
 import { logger } from '../utils/logger';
+import { ExpenseService } from '../services/expenseService';
+import { useErrorHandler } from '../hooks/useErrorHandler';
 
 const ExpenseAdd = () => {
-  const [expenseName, setExpenseName] = useState('');
+  const [expenseCategory, setExpenseCategory] = useState('');
   const [expenseAmount, setExpenseAmount] = useState<number | ''>('');
   const [expenseDate, setExpenseDate] = useState<string>(new Date().toISOString().split('T')[0]);
-  const [expenseNotes, setExpenseNotes] = useState('');
+  const [expenseDescription, setExpenseDescription] = useState('');
   const [loading, setLoading] = useState(false);
-  const [alert, setAlert] = useState<{show: boolean, message: string, type: 'success' | 'error'}>({
-    show: false,
-    message: '',
-    type: 'success'
-  });
+  const [successMessage, setSuccessMessage] = useState('');
+
+  const { error, showError, clearError } = useErrorHandler();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Form doğrulama
-    if (!expenseName.trim()) {
-      setAlert({
-        show: true,
-        message: 'Lütfen gider adını girin',
-        type: 'error'
-      });
+
+    // Form validation
+    if (!expenseCategory.trim()) {
+      showError('Lütfen gider kategorisini girin');
       return;
     }
-    
-    if (!expenseAmount) {
-      setAlert({
-        show: true,
-        message: 'Lütfen gider tutarını girin',
-        type: 'error'
-      });
+
+    if (!expenseAmount || expenseAmount <= 0) {
+      showError('Lütfen geçerli bir tutar girin');
       return;
     }
-    
+
     if (!expenseDate) {
-      setAlert({
-        show: true,
-        message: 'Lütfen gider tarihini seçin',
-        type: 'error'
-      });
+      showError('Lütfen gider tarihini seçin');
       return;
     }
-    
+
     try {
       setLoading(true);
-      
-      // Kullanıcı ve proje bilgisini al
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData || !userData.user) {
-        throw new Error('Kullanıcı bilgisi alınamadı');
-      }
-      
+
       const currentProjectId = localStorage.getItem('currentProjectId');
       if (!currentProjectId) {
-        throw new Error('Proje bilgisi bulunamadı');
+        showError('Proje bilgisi bulunamadı. Lütfen proje seçin.');
+        return;
       }
-      
-      // Formatlanmış tarih (ISO formatı)
+
       const formattedDate = new Date(expenseDate).toISOString();
-      
-      logger.log('Gider ekleniyor:', {
-        name: expenseName.trim(),
+
+      await ExpenseService.create({
+        category: expenseCategory.trim(),
         amount: Number(expenseAmount),
         date: formattedDate,
-        notes: expenseNotes.trim() || null,
+        description: expenseDescription.trim() || undefined,
         project_id: parseInt(currentProjectId),
-        user_id: userData.user.id,
       });
-      
-      // Yeni gider kaydı ekle
-      const { data, error } = await supabase
-        .from('expenses')
-        .insert([
-          {
-            name: expenseName.trim(),
-            amount: Number(expenseAmount),
-            date: formattedDate,
-            notes: expenseNotes.trim() || null,
-            project_id: parseInt(currentProjectId),
-            user_id: userData.user.id,
-          },
-        ])
-        .select();
-      
-      if (error) throw error;
-      
-      // Başarılı kayıt
-      setAlert({
-        show: true,
-        message: 'Gider başarıyla eklendi',
-        type: 'success'
-      });
-      
-      // Formu sıfırla
-      setExpenseName('');
+
+      setSuccessMessage('Gider başarıyla eklendi');
+
+      // Reset form
+      setExpenseCategory('');
       setExpenseAmount('');
       setExpenseDate(new Date().toISOString().split('T')[0]);
-      setExpenseNotes('');
-      
-    } catch (error: any) {
-      logger.error('Gider ekleme hatası:', error);
-      setAlert({
-        show: true,
-        message: `Gider eklenirken hata oluştu: ${error.message}`,
-        type: 'error'
-      });
+      setExpenseDescription('');
+    } catch (err) {
+      showError(err);
     } finally {
       setLoading(false);
     }
   };
-  
+
   return (
     <Container maxWidth="md">
       <Paper elevation={3} sx={{ p: 3, mt: 2 }}>
         <Typography variant="h5" component="h1" gutterBottom>
           Gider Ekle
         </Typography>
-        
+
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }} onClose={clearError}>
+            {error.message}
+          </Alert>
+        )}
+
         <Box component="form" onSubmit={handleSubmit} noValidate>
           <Grid container spacing={3}>
             <Grid item xs={12} sm={6}>
               <TextField
                 required
                 fullWidth
-                label="Gider Adı"
-                value={expenseName}
-                onChange={(e) => setExpenseName(e.target.value)}
+                label="Gider Kategorisi"
+                value={expenseCategory}
+                onChange={(e) => setExpenseCategory(e.target.value)}
                 disabled={loading}
                 margin="normal"
+                placeholder="Örn: Kira, Maaş, Elektrik"
               />
             </Grid>
-            
+
             <Grid item xs={12} sm={6}>
               <TextField
                 required
@@ -163,7 +120,7 @@ const ExpenseAdd = () => {
                 }}
               />
             </Grid>
-            
+
             <Grid item xs={12} sm={6}>
               <TextField
                 required
@@ -179,20 +136,21 @@ const ExpenseAdd = () => {
                 }}
               />
             </Grid>
-            
+
             <Grid item xs={12}>
               <TextField
                 fullWidth
-                label="Notlar"
+                label="Açıklama"
                 multiline
                 rows={3}
-                value={expenseNotes}
-                onChange={(e) => setExpenseNotes(e.target.value)}
+                value={expenseDescription}
+                onChange={(e) => setExpenseDescription(e.target.value)}
                 disabled={loading}
                 margin="normal"
+                placeholder="Gider detayları..."
               />
             </Grid>
-            
+
             <Grid item xs={12}>
               <Button
                 type="submit"
@@ -208,22 +166,19 @@ const ExpenseAdd = () => {
           </Grid>
         </Box>
       </Paper>
-      
+
       <Snackbar
-        open={alert.show}
-        autoHideDuration={6000}
-        onClose={() => setAlert({ ...alert, show: false })}
+        open={!!successMessage}
+        autoHideDuration={3000}
+        onClose={() => setSuccessMessage('')}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert
-          onClose={() => setAlert({ ...alert, show: false })}
-          severity={alert.type}
-          sx={{ width: '100%' }}
-        >
-          {alert.message}
+        <Alert severity="success" onClose={() => setSuccessMessage('')}>
+          {successMessage}
         </Alert>
       </Snackbar>
     </Container>
   );
 };
 
-export default ExpenseAdd; 
+export default ExpenseAdd;
