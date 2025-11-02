@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
+import { logger } from '../utils/logger';
   Container,
   Typography,
   Box,
@@ -24,6 +25,7 @@ import {
   Snackbar
 } from '@mui/material';
 import {
+import { logger } from '../utils/logger';
   Edit as EditIcon,
   Delete as DeleteIcon,
   Add as AddIcon
@@ -32,6 +34,7 @@ import { supabase } from '../lib/supabase';
 import { Personnel } from '../types/database';
 import { format, parseISO } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
+import { logger } from '../utils/logger';
 
 const PersonnelList = () => {
   const navigate = useNavigate();
@@ -80,7 +83,7 @@ const PersonnelList = () => {
       setPersonnel(data || []);
       
     } catch (error: any) {
-      console.error('Personel listesi alınırken hata:', error);
+      logger.error('Personel listesi alınırken hata:', error);
       setAlert({
         show: true,
         message: `Personel yüklenirken hata oluştu: ${error.message}`,
@@ -152,7 +155,7 @@ const PersonnelList = () => {
       fetchPersonnel();
       
     } catch (error: any) {
-      console.error('Personel güncelleme hatası:', error);
+      logger.error('Personel güncelleme hatası:', error);
       setAlert({
         show: true,
         message: `Personel güncellenirken hata oluştu: ${error.message}`,
@@ -187,7 +190,7 @@ const PersonnelList = () => {
       fetchPersonnel();
       
     } catch (error: any) {
-      console.error('Personel silme hatası:', error);
+      logger.error('Personel silme hatası:', error);
       setAlert({
         show: true,
         message: `Personel silinirken hata oluştu: ${error.message}`,

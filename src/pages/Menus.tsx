@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
+import { logger } from '../utils/logger';
   Container,
   Typography,
   Box,
@@ -33,6 +34,7 @@ import {
   ListItemSecondaryAction
 } from '@mui/material';
 import {
+import { logger } from '../utils/logger';
   Add as AddIcon,
   Edit as EditIcon,
   DeleteOutline as DeleteIcon,
@@ -43,6 +45,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { Menu, Recipe } from '../types/database';
+import { logger } from '../utils/logger';
 
 interface MenuWithRecipeCount extends Menu {
   recipe_count?: number;
@@ -188,7 +191,7 @@ const Menus = () => {
           .eq('menu_id', menu.id);
           
         if (countError) {
-          console.error(`Menü ${menu.id} için tarif sayısı alınırken hata:`, countError);
+          logger.error(`Menü ${menu.id} için tarif sayısı alınırken hata:`, countError);
           return { ...menu, recipe_count: 0 };
         }
         
@@ -197,7 +200,7 @@ const Menus = () => {
       
       setMenus(menusWithRecipeCounts);
     } catch (error: any) {
-      console.error('Menüler alınırken hata:', error);
+      logger.error('Menüler alınırken hata:', error);
       setError(`Menüler yüklenirken hata oluştu: ${error.message}`);
     } finally {
       setLoading(false);
@@ -268,7 +271,7 @@ const Menus = () => {
           .eq('recipe_id', recipe.id);
         
         if (ingredientsError) {
-          console.error(`Tarif ${recipe.id} için malzemeler alınırken hata:`, ingredientsError);
+          logger.error(`Tarif ${recipe.id} için malzemeler alınırken hata:`, ingredientsError);
           return { ...recipe, quantity, menu_recipe_id } as DetailedRecipe;
         }
         
@@ -298,7 +301,7 @@ const Menus = () => {
       
       setMenuRecipes(recipesWithIngredients);
     } catch (error: any) {
-      console.error('Menü detayları alınırken hata:', error);
+      logger.error('Menü detayları alınırken hata:', error);
       setAlert({
         show: true,
         message: `Menü detayları alınırken hata oluştu: ${error.message}`,
@@ -340,7 +343,7 @@ const Menus = () => {
           .eq('id', update.id);
           
         if (error) {
-          console.error(`Tarif miktarı güncellenirken hata: recipe_id=${update.id}`, error);
+          logger.error(`Tarif miktarı güncellenirken hata: recipe_id=${update.id}`, error);
           throw error;
         }
       }
@@ -355,7 +358,7 @@ const Menus = () => {
       calculateProductNeeds();
       
     } catch (error: any) {
-      console.error('Tarif miktarları güncellenirken hata:', error);
+      logger.error('Tarif miktarları güncellenirken hata:', error);
       setAlert({
         show: true,
         message: `Tarif miktarları güncellenirken hata: ${error.message}`,
@@ -404,7 +407,7 @@ const Menus = () => {
 
   const handleEdit = (menuId: number) => {
     // İleride düzenleme işlevselliği için
-    console.log(`Menü düzenle: ${menuId}`);
+    logger.log(`Menü düzenle: ${menuId}`);
     navigate(`/menu-add?edit=${menuId}`);
   };
 
@@ -430,7 +433,7 @@ const Menus = () => {
         .eq('menu_id', menuToDelete);
 
       if (recipesError) {
-        console.error('Menü tariflerini silerken hata:', recipesError);
+        logger.error('Menü tariflerini silerken hata:', recipesError);
         throw new Error(`Menü tariflerini silerken hata: ${recipesError.message}`);
       }
 
@@ -441,7 +444,7 @@ const Menus = () => {
         .eq('id', menuToDelete);
 
       if (menuError) {
-        console.error('Menüyü silerken hata:', menuError);
+        logger.error('Menüyü silerken hata:', menuError);
         throw new Error(`Menüyü silerken hata: ${menuError.message}`);
       }
 
@@ -455,7 +458,7 @@ const Menus = () => {
       // Menüleri yeniden yükle
       fetchMenus();
     } catch (error: any) {
-      console.error('Menüyü silerken hata:', error);
+      logger.error('Menüyü silerken hata:', error);
       setAlert({
         show: true,
         message: `Menüyü silerken hata oluştu: ${error.message}`,

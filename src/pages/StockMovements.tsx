@@ -35,6 +35,7 @@ import RemoveIcon from '@mui/icons-material/Remove';
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
 import { logActivity } from '../lib/activityLogger';
+import { logger } from '../utils/logger';
 
 // Extended Product interface for UI needs
 interface ExtendedProduct extends Product {
@@ -111,7 +112,7 @@ const StockMovements = () => {
       const currentProjectId = localStorage.getItem('currentProjectId');
       
       if (!currentProjectId) {
-        console.error('No project ID found in localStorage');
+        logger.error('No project ID found in localStorage');
         return;
       }
       
@@ -124,14 +125,14 @@ const StockMovements = () => {
 
       if (error) throw error;
       
-      console.log('Database structure check - Sample stock movements:', data);
+      logger.log('Database structure check - Sample stock movements:', data);
       
       // Check if is_bulk and bulk_id exist
       if (data && data.length > 0) {
         const firstRecord = data[0];
-        console.log('First record structure:', Object.keys(firstRecord));
-        console.log('is_bulk exists:', 'is_bulk' in firstRecord);
-        console.log('bulk_id exists:', 'bulk_id' in firstRecord);
+        logger.log('First record structure:', Object.keys(firstRecord));
+        logger.log('is_bulk exists:', 'is_bulk' in firstRecord);
+        logger.log('bulk_id exists:', 'bulk_id' in firstRecord);
       }
       
       // Try fetching with explicit is_bulk filter
@@ -143,11 +144,11 @@ const StockMovements = () => {
         
       if (bulkError) throw bulkError;
       
-      console.log('Movements with is_bulk=true count:', bulkData?.length);
-      console.log('Sample bulk movements:', bulkData?.slice(0, 3));
+      logger.log('Movements with is_bulk=true count:', bulkData?.length);
+      logger.log('Sample bulk movements:', bulkData?.slice(0, 3));
       
     } catch (error) {
-      console.error('Error checking database structure:', error);
+      logger.error('Error checking database structure:', error);
     }
   };
 
@@ -159,11 +160,11 @@ const StockMovements = () => {
       const currentProjectId = localStorage.getItem('currentProjectId');
       
       if (!currentProjectId) {
-        console.error('No project ID found in localStorage');
+        logger.error('No project ID found in localStorage');
         return;
       }
       
-      console.log("--- Fetching Movements for project ID:", currentProjectId);
+      logger.log("--- Fetching Movements for project ID:", currentProjectId);
       
       // Önce tüm ürünlerin güncel listesini alalım
       const { data: productData, error: productError } = await supabase
@@ -175,7 +176,7 @@ const StockMovements = () => {
       if (productError) throw productError;
       
       const allProducts = productData || [];
-      console.log(`Loaded ${allProducts.length} products for project ID: ${currentProjectId}`);
+      logger.log(`Loaded ${allProducts.length} products for project ID: ${currentProjectId}`);
       setProducts(allProducts);
       
       // Tarih filtreleri için sorguyu hazırla
@@ -209,10 +210,10 @@ const StockMovements = () => {
 
       if (error) throw error;
       
-      console.log(`Fetched ${data?.length || 0} stock movements for project ID: ${currentProjectId}`);
+      logger.log(`Fetched ${data?.length || 0} stock movements for project ID: ${currentProjectId}`);
       
       if (!data || data.length === 0) {
-        console.log('No movements found');
+        logger.log('No movements found');
         setBulkMovements([]);
         setMovements([]);
         setTotalAmount(0);
@@ -276,7 +277,7 @@ const StockMovements = () => {
       
       // Bulk hareketlerini dizi haline getir
       const groupedBulkMovements = Object.values(bulkGroups);
-      console.log(`Created ${groupedBulkMovements.length} grouped bulk movements`);
+      logger.log(`Created ${groupedBulkMovements.length} grouped bulk movements`);
       
       // Bulk hareketlerini ve bireysel hareketleri DisplayStockMovement formatına dönüştür
       const displayMovements: DisplayStockMovement[] = [
@@ -323,7 +324,7 @@ const StockMovements = () => {
       setMovements(displayMovements);
       setBulkMovements(groupedBulkMovements);
     } catch (error) {
-      console.error('Error fetching movements:', error);
+      logger.error('Error fetching movements:', error);
     } finally {
       setLoading(false);
     }
@@ -335,7 +336,7 @@ const StockMovements = () => {
       const currentProjectId = localStorage.getItem('currentProjectId');
       
       if (!currentProjectId) {
-        console.error('No project ID found in localStorage');
+        logger.error('No project ID found in localStorage');
         alert('Proje seçilmemiş. Lütfen önce bir proje seçin.');
         navigate('/'); // Navigate to project selection page
         return [];
@@ -344,7 +345,7 @@ const StockMovements = () => {
       // Parse project ID once
       const projectId = parseInt(currentProjectId);
       
-      console.log(`fetchProducts: Getting products for project ID: ${projectId}`);
+      logger.log(`fetchProducts: Getting products for project ID: ${projectId}`);
       
       // RESET PRODUCTS FIRST - This is essential for project isolation
       setProducts([]);
@@ -360,11 +361,11 @@ const StockMovements = () => {
       
       // Ensure we only include products from the current project
       const projectProducts = data || [];
-      console.log(`fetchProducts: Loaded ${projectProducts.length} products for project ID: ${projectId}`);
+      logger.log(`fetchProducts: Loaded ${projectProducts.length} products for project ID: ${projectId}`);
       
       // Log all the products we're about to set in state
       projectProducts.forEach(p => {
-        console.log(`Setting product in state: ${p.id} (${p.name}), Project: ${p.project_id}`);
+        logger.log(`Setting product in state: ${p.id} (${p.name}), Project: ${p.project_id}`);
       });
       
       // Set products after completely emptying the previous state
@@ -372,7 +373,7 @@ const StockMovements = () => {
       
       return projectProducts; // Return for potential chaining
     } catch (error) {
-      console.error('Error fetching products:', error);
+      logger.error('Error fetching products:', error);
       alert(`Ürünler yüklenirken bir hata oluştu: ${(error as Error).message}`);
       return []; // Return empty array for safety
     }
@@ -443,7 +444,7 @@ const StockMovements = () => {
       
       // Parse project ID once
       const projectId = parseInt(currentProjectId);
-      console.log(`[NEW METHOD] Bulk Stock Out: Fetching products for project ID: ${projectId}`);
+      logger.log(`[NEW METHOD] Bulk Stock Out: Fetching products for project ID: ${projectId}`);
       
       // COMPLETELY NEW METHOD: Directly fetch products into a separate state
       const { data: projectProducts, error } = await supabase
@@ -455,7 +456,7 @@ const StockMovements = () => {
       if (error) throw error;
       
       const productsWithStock = projectProducts || [];
-      console.log(`[NEW METHOD] Loaded ${productsWithStock.length} products with stock directly from database for project ID: ${projectId}`);
+      logger.log(`[NEW METHOD] Loaded ${productsWithStock.length} products with stock directly from database for project ID: ${projectId}`);
       
       if (productsWithStock.length === 0) {
         alert('Bu projede stokta ürün bulunmamaktadır. Önce ürün ekleyin veya mevcut ürünlere stok ekleyin.');
@@ -471,7 +472,7 @@ const StockMovements = () => {
       setLoading(false);
       
     } catch (error) {
-      console.error('[NEW METHOD] Error preparing bulk stock out:', error);
+      logger.error('[NEW METHOD] Error preparing bulk stock out:', error);
       alert(`Bir hata oluştu: ${(error as Error).message}`);
       setLoading(false);
     }
@@ -517,7 +518,7 @@ const StockMovements = () => {
       const currentProjectId = localStorage.getItem('currentProjectId');
       
       if (!currentProjectId) {
-        console.error('No project ID found in localStorage');
+        logger.error('No project ID found in localStorage');
         alert('Proje bilgisi bulunamadı. Lütfen tekrar proje seçin.');
         return;
       }
@@ -641,7 +642,7 @@ const StockMovements = () => {
       fetchMovements();
       fetchProducts();
     } catch (error) {
-      console.error('Error submitting bulk stock out:', error);
+      logger.error('Error submitting bulk stock out:', error);
       alert(`Bir hata oluştu: ${(error as Error).message}`);
     } finally {
       setLoading(false);
@@ -651,7 +652,7 @@ const StockMovements = () => {
   // Completely rewritten to use dialogProducts instead of products
   const renderProductOptions = () => {
     // Use dialog products instead of main products state
-    console.log('Rendering product options, dialog products count:', dialogProducts.length);
+    logger.log('Rendering product options, dialog products count:', dialogProducts.length);
     
     if (dialogProducts.length === 0) {
       return <MenuItem disabled>Yükleniyor...</MenuItem>;
@@ -663,11 +664,11 @@ const StockMovements = () => {
     }
     
     const projectId = parseInt(currentProjectId);
-    console.log(`Rendering product options for project ID: ${projectId}`);
+    logger.log(`Rendering product options for project ID: ${projectId}`);
     
     // Log all products from dialog state
     dialogProducts.forEach(p => {
-      console.log(`Dialog product: ${p.id} ${p.name}, Project: ${p.project_id}, Stock: ${p.stock_quantity}`);
+      logger.log(`Dialog product: ${p.id} ${p.name}, Project: ${p.project_id}, Stock: ${p.stock_quantity}`);
     });
     
     return dialogProducts.map(product => (
@@ -899,7 +900,7 @@ const StockMovements = () => {
             // Dialog açılırken yeni veri getir - bunu tamamen değiştirdim
             const currentProjectId = localStorage.getItem('currentProjectId');
             if (currentProjectId) {
-              console.log('[DEDICATED METHOD] Dialog opened, refreshing products');
+              logger.log('[DEDICATED METHOD] Dialog opened, refreshing products');
               
               // Parse project ID
               const projectId = parseInt(currentProjectId);
@@ -915,15 +916,15 @@ const StockMovements = () => {
                 .order('name')
                 .then(({ data, error }) => {
                   if (error) {
-                    console.error('[DEDICATED METHOD] Error loading dialog products:', error);
+                    logger.error('[DEDICATED METHOD] Error loading dialog products:', error);
                     return;
                   }
                   
-                  console.log(`[DEDICATED METHOD] Loaded ${data?.length || 0} products for dialog, project ${projectId}`);
+                  logger.log(`[DEDICATED METHOD] Loaded ${data?.length || 0} products for dialog, project ${projectId}`);
                   
                   // Log to verify they're the right project
                   if (data && data.length > 0) {
-                    console.log(`[DEDICATED METHOD] Products sample project_id: ${data[0].project_id}`);
+                    logger.log(`[DEDICATED METHOD] Products sample project_id: ${data[0].project_id}`);
                   }
                   
                   setDialogProducts(data || []);

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
+import { logger } from '../utils/logger';
   Container,
   Typography,
   Box,
@@ -25,6 +26,7 @@ import {
   Chip
 } from '@mui/material';
 import {
+import { logger } from '../utils/logger';
   NavigateBefore as PrevIcon,
   NavigateNext as NextIcon,
   Save as SaveIcon,
@@ -36,6 +38,7 @@ import { Personnel, Timesheet } from '../types/database';
 import { format, parseISO, addMonths, subMonths, setDate, getDaysInMonth } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import * as XLSX from 'xlsx';
+import { logger } from '../utils/logger';
 
 const PersonnelTimesheet = () => {
   const [personnel, setPersonnel] = useState<Personnel[]>([]);
@@ -97,7 +100,7 @@ const PersonnelTimesheet = () => {
       setPersonnel(data || []);
       
     } catch (error: any) {
-      console.error('Personel listesi alınırken hata:', error);
+      logger.error('Personel listesi alınırken hata:', error);
       setAlert({
         show: true,
         message: `Personel yüklenirken hata oluştu: ${error.message}`,
@@ -134,7 +137,7 @@ const PersonnelTimesheet = () => {
       setTimesheetChanges({});
       
     } catch (error: any) {
-      console.error('Puantaj listesi alınırken hata:', error);
+      logger.error('Puantaj listesi alınırken hata:', error);
       setAlert({
         show: true,
         message: `Puantaj yüklenirken hata oluştu: ${error.message}`,
@@ -257,7 +260,7 @@ const PersonnelTimesheet = () => {
       fetchTimesheets();
       
     } catch (error: any) {
-      console.error('Puantaj kaydetme hatası:', error);
+      logger.error('Puantaj kaydetme hatası:', error);
       setAlert({
         show: true,
         message: `Puantaj kaydedilirken hata oluştu: ${error.message}`,
@@ -386,7 +389,7 @@ const PersonnelTimesheet = () => {
         type: 'success'
       });
     } catch (error: any) {
-      console.error('Excel indirme hatası:', error);
+      logger.error('Excel indirme hatası:', error);
       setAlert({
         show: true,
         message: `Excel dosyası oluşturulurken hata oluştu: ${error.message}`,

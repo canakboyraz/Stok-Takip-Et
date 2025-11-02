@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
+import { logger } from '../utils/logger';
   Container,
   Grid,
   Paper,
@@ -19,6 +20,7 @@ import { Product } from '../types/database';
 import { handleError, getErrorMessage } from '../utils/errorHandler';
 import { UI_CONSTANTS, DB_TABLES, CURRENCY, DATE_FORMATS } from '../utils/constants';
 import useLocalStorage from '../hooks/useLocalStorage';
+import { logger } from '../utils/logger';
 
 const Dashboard = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -75,7 +77,7 @@ const Dashboard = () => {
         throw new Error('Proje seçilmemiş. Lütfen bir proje seçin.');
       }
       
-      console.log(`Fetching products for project ID: ${currentProjectId}`);
+      logger.log(`Fetching products for project ID: ${currentProjectId}`);
       
       const { data, error: supabaseError } = await supabase
         .from(DB_TABLES.PRODUCTS)
@@ -115,7 +117,7 @@ const Dashboard = () => {
     } catch (err) {
       const errorMessage = getErrorMessage(err);
       setError(errorMessage);
-      console.error('Dashboard error:', handleError(err));
+      logger.error('Dashboard error:', handleError(err));
     } finally {
       setLoading(false);
     }

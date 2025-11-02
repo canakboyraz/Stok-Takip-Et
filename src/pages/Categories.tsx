@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
+import { logger } from '../utils/logger';
   Container,
   Typography,
   Box,
@@ -24,6 +25,7 @@ import {
   Snackbar
 } from '@mui/material';
 import {
+import { logger } from '../utils/logger';
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon
@@ -33,6 +35,7 @@ import { Category } from '../types/database';
 import { capitalizeFirstLetter } from '../lib/formatHelpers';
 import { logActivity } from '../lib/activityLogger';
 import { DB_TABLES } from '../utils/constants';
+import { logger } from '../utils/logger';
 
 const Categories = () => {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -51,7 +54,7 @@ const Categories = () => {
       const currentProjectId = localStorage.getItem('currentProjectId');
       
       if (!currentProjectId) {
-        console.error('No project ID found in localStorage');
+        logger.error('No project ID found in localStorage');
         return;
       }
       
@@ -67,7 +70,7 @@ const Categories = () => {
       
       setCategories(data || []);
     } catch (error) {
-      console.error('Error fetching categories:', error);
+      logger.error('Error fetching categories:', error);
     } finally {
       setLoading(false);
     }
@@ -96,7 +99,7 @@ const Categories = () => {
       const currentProjectId = localStorage.getItem('currentProjectId');
       
       if (!currentProjectId) {
-        console.error('No project ID found in localStorage');
+        logger.error('No project ID found in localStorage');
         alert('Proje bilgisi bulunamadı. Lütfen tekrar proje seçin.');
         return;
       }
@@ -137,7 +140,7 @@ const Categories = () => {
           .eq('id', editingCategory.id);
 
         if (error) {
-          console.error('Kategori güncelleme hatası:', error);
+          logger.error('Kategori güncelleme hatası:', error);
           throw error;
         }
         
@@ -149,9 +152,9 @@ const Categories = () => {
             'category',
             editingCategory.id
           );
-          console.log('Category update activity logged:', activityLogged);
+          logger.log('Category update activity logged:', activityLogged);
         } catch (activityError) {
-          console.error('Failed to log category update activity:', activityError);
+          logger.error('Failed to log category update activity:', activityError);
         }
         
         alert(`Kategori başarıyla güncellendi: ${formattedCategoryName}`);
@@ -166,7 +169,7 @@ const Categories = () => {
           .select();
 
         if (error) {
-          console.error('Kategori ekleme hatası:', error);
+          logger.error('Kategori ekleme hatası:', error);
           throw error;
         }
         
@@ -179,9 +182,9 @@ const Categories = () => {
               'category',
               data[0].id
             );
-            console.log('Category creation activity logged:', activityLogged);
+            logger.log('Category creation activity logged:', activityLogged);
           } catch (activityError) {
-            console.error('Failed to log category creation activity:', activityError);
+            logger.error('Failed to log category creation activity:', activityError);
           }
         }
         
@@ -191,7 +194,7 @@ const Categories = () => {
       handleCloseDialog();
       await fetchCategories();
     } catch (error: any) {
-      console.error('Error saving category:', error);
+      logger.error('Error saving category:', error);
       
       // Daha detaylı hata mesajı göster
       if (error.message && error.message.includes('duplicate key value')) {
@@ -216,7 +219,7 @@ const Categories = () => {
         .single();
         
       if (fetchError) {
-        console.error('Kategori bilgisi alınamadı:', fetchError);
+        logger.error('Kategori bilgisi alınamadı:', fetchError);
       }
       
       const categoryName = categoryData?.name || 'Bilinmeyen kategori';
@@ -236,14 +239,14 @@ const Categories = () => {
           'category',
           id
         );
-        console.log('Category deletion activity logged:', activityLogged);
+        logger.log('Category deletion activity logged:', activityLogged);
       } catch (activityError) {
-        console.error('Failed to log category deletion activity:', activityError);
+        logger.error('Failed to log category deletion activity:', activityError);
       }
 
       await fetchCategories();
     } catch (error) {
-      console.error('Error deleting category:', error);
+      logger.error('Error deleting category:', error);
       alert('Kategori silinemedi. Bu kategoriye ait ürünler olabilir.');
     }
   };

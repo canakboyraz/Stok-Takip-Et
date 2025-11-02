@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
+import { logger } from '../utils/logger';
   Container,
   Typography,
   Box,
@@ -14,6 +15,7 @@ import {
 import { supabase } from '../lib/supabase';
 import { Personnel } from '../types/database';
 import { useNavigate } from 'react-router-dom';
+import { logger } from '../utils/logger';
 
 const PersonnelAdd = () => {
   const navigate = useNavigate();
@@ -105,7 +107,7 @@ const PersonnelAdd = () => {
       resetForm();
       
     } catch (error: any) {
-      console.error('Personel ekleme hatası:', error);
+      logger.error('Personel ekleme hatası:', error);
       setAlert({
         show: true,
         message: `Personel eklenirken hata oluştu: ${error.message}`,

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
+import { logger } from '../utils/logger';
   Container,
   Typography,
   Box,
@@ -24,6 +25,7 @@ import {
   Snackbar
 } from '@mui/material';
 import {
+import { logger } from '../utils/logger';
   Edit as EditIcon,
   Delete as DeleteIcon,
   Search as SearchIcon,
@@ -32,6 +34,7 @@ import {
 import { supabase } from '../lib/supabase';
 import { Expense } from '../types/database';
 import { format, parseISO } from 'date-fns';
+import { logger } from '../utils/logger';
 
 const ExpenseList = () => {
   // State değişkenleri
@@ -107,7 +110,7 @@ const ExpenseList = () => {
         setTotalAmount(total);
       }
     } catch (error: any) {
-      console.error('Gider listesi alınırken hata:', error);
+      logger.error('Gider listesi alınırken hata:', error);
       setAlert({
         show: true,
         message: `Giderler yüklenirken hata oluştu: ${error.message}`,
@@ -192,7 +195,7 @@ const ExpenseList = () => {
       fetchExpenses(startDate, endDate);
       
     } catch (error: any) {
-      console.error('Gider güncelleme hatası:', error);
+      logger.error('Gider güncelleme hatası:', error);
       setAlert({
         show: true,
         message: `Gider güncellenirken hata oluştu: ${error.message}`,
@@ -227,7 +230,7 @@ const ExpenseList = () => {
       fetchExpenses(startDate, endDate);
       
     } catch (error: any) {
-      console.error('Gider silme hatası:', error);
+      logger.error('Gider silme hatası:', error);
       setAlert({
         show: true,
         message: `Gider silinirken hata oluştu: ${error.message}`,

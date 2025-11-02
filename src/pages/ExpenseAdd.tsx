@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+import { logger } from '../utils/logger';
   Container,
   Typography,
   Box,
@@ -13,6 +14,7 @@ import {
 } from '@mui/material';
 import { supabase } from '../lib/supabase';
 import { Expense } from '../types/database';
+import { logger } from '../utils/logger';
 
 const ExpenseAdd = () => {
   const [expenseName, setExpenseName] = useState('');
@@ -74,7 +76,7 @@ const ExpenseAdd = () => {
       // Formatlanmış tarih (ISO formatı)
       const formattedDate = new Date(expenseDate).toISOString();
       
-      console.log('Gider ekleniyor:', {
+      logger.log('Gider ekleniyor:', {
         name: expenseName.trim(),
         amount: Number(expenseAmount),
         date: formattedDate,
@@ -114,7 +116,7 @@ const ExpenseAdd = () => {
       setExpenseNotes('');
       
     } catch (error: any) {
-      console.error('Gider ekleme hatası:', error);
+      logger.error('Gider ekleme hatası:', error);
       setAlert({
         show: true,
         message: `Gider eklenirken hata oluştu: ${error.message}`,

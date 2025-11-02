@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
+import { logger } from '../utils/logger';
   Container,
   Paper,
   Typography,
@@ -25,6 +26,7 @@ import {
   Tooltip,
 } from '@mui/material';
 import {
+import { logger } from '../utils/logger';
   Undo as UndoIcon,
   AccessTime as AccessTimeIcon,
   Restaurant as RestaurantIcon,
@@ -35,6 +37,7 @@ import {
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { logActivity } from '../lib/activityLogger';
+import { logger } from '../utils/logger';
 
 interface ReversibleOperation {
   bulk_id: number;
@@ -175,7 +178,7 @@ const MenuConsumptionUndo = () => {
       // Eğer operationDetails boşsa, önce detayları yükle
       let detailsToProcess = operationDetails;
       if (detailsToProcess.length === 0) {
-        console.log('Operation details boş, yükleniyor...');
+        logger.log('Operation details boş, yükleniyor...');
         
         const { data, error } = await supabase
           .from('stock_movements')
@@ -202,7 +205,7 @@ const MenuConsumptionUndo = () => {
           current_stock: item.products?.stock_quantity || 0,
         })) || [];
 
-        console.log('Yüklenen detaylar:', detailsToProcess);
+        logger.log('Yüklenen detaylar:', detailsToProcess);
       }
 
       if (detailsToProcess.length === 0) {
@@ -236,10 +239,10 @@ const MenuConsumptionUndo = () => {
       if (stockError) throw stockError;
 
       // 3. Stok miktarlarını geri yükle
-      console.log(`${detailsToProcess.length} ürün için stok geri yüklenecek`);
+      logger.log(`${detailsToProcess.length} ürün için stok geri yüklenecek`);
       for (const detail of detailsToProcess) {
         const newStockQuantity = detail.current_stock + detail.quantity;
-        console.log(`${detail.product_name}: ${detail.current_stock} + ${detail.quantity} = ${newStockQuantity}`);
+        logger.log(`${detail.product_name}: ${detail.current_stock} + ${detail.quantity} = ${newStockQuantity}`);
         
         const { error: updateError } = await supabase
           .from('products')
@@ -250,16 +253,16 @@ const MenuConsumptionUndo = () => {
           .eq('project_id', selectedOperation.project_id); // Proje kontrolü ekle
 
         if (updateError) {
-          console.error(`Ürün ${detail.product_name} için stok güncellenirken hata:`, updateError);
+          logger.error(`Ürün ${detail.product_name} için stok güncellenirken hata:`, updateError);
           throw updateError;
         }
         
-        console.log(`✅ ${detail.product_name} stoğu güncellendi: ${newStockQuantity}`);
+        logger.log(`✅ ${detail.product_name} stoğu güncellendi: ${newStockQuantity}`);
       }
 
       // Etkinlik kaydı ekle - Hata olsa bile geri alma işlemi tamamlanmış olsun
       try {
-        console.log('🔍 MenuConsumptionUndo: Etkinlik kaydı ekleniyor...', {
+        logger.log('🔍 MenuConsumptionUndo: Etkinlik kaydı ekleniyor...', {
           type: 'menu_consumption_undo',
           description: `${selectedOperation.notes} - ${detailsToProcess.length} ürün geri yüklendi. Neden: ${undoReason.trim()}`,
           entity_type: 'bulk_movement',
@@ -273,13 +276,13 @@ const MenuConsumptionUndo = () => {
           selectedOperation.bulk_id
         );
         
-        console.log('🔍 MenuConsumptionUndo: Etkinlik kaydı sonucu:', activityResult);
+        logger.log('🔍 MenuConsumptionUndo: Etkinlik kaydı sonucu:', activityResult);
         
         if (!activityResult) {
-          console.warn('⚠️ Etkinlik kaydı başarısız oldu ama geri alma işlemi tamamlandı');
+          logger.warn('⚠️ Etkinlik kaydı başarısız oldu ama geri alma işlemi tamamlandı');
         }
       } catch (activityError) {
-        console.error('❌ Etkinlik kaydı hatası (geri alma başarılı):', activityError);
+        logger.error('❌ Etkinlik kaydı hatası (geri alma başarılı):', activityError);
         // Etkinlik kaydı hatası geri alma işlemini etkilememeli
       }
 
