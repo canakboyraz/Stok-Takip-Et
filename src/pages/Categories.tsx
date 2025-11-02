@@ -1,19 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import {
-import { logger } from '../utils/logger';
   Container,
   Typography,
   Box,
   Paper,
   Grid,
   Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Alert,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -21,21 +13,20 @@ import { logger } from '../utils/logger';
   TextField,
   CircularProgress,
   IconButton,
-  Tooltip,
-  Snackbar
+  Snackbar,
+  Alert
 } from '@mui/material';
 import {
-import { logger } from '../utils/logger';
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon
 } from '@mui/icons-material';
-import { supabase } from '../lib/supabase';
 import { Category } from '../types/database';
 import { capitalizeFirstLetter } from '../lib/formatHelpers';
 import { logActivity } from '../lib/activityLogger';
-import { DB_TABLES } from '../utils/constants';
 import { logger } from '../utils/logger';
+import { CategoryService } from '../services/categoryService';
+import { useErrorHandler } from '../hooks/useErrorHandler';
 
 const Categories = () => {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -43,6 +34,9 @@ const Categories = () => {
   const [newCategoryName, setNewCategoryName] = useState('');
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [loading, setLoading] = useState(true);
+  const [successMessage, setSuccessMessage] = useState('');
+
+  const { error, showError, clearError } = useErrorHandler();
 
   useEffect(() => {
     fetchCategories();
@@ -50,27 +44,18 @@ const Categories = () => {
 
   const fetchCategories = async () => {
     try {
-      // Get current project ID from localStorage
       const currentProjectId = localStorage.getItem('currentProjectId');
-      
+
       if (!currentProjectId) {
-        logger.error('No project ID found in localStorage');
+        showError('Proje bulunamadı. Lütfen proje seçin.');
         return;
       }
-      
-      setLoading(true);
-      
-      const { data, error } = await supabase
-        .from(DB_TABLES.CATEGORIES)
-        .select('*')
-        .eq('project_id', parseInt(currentProjectId))
-        .order('name');
 
-      if (error) throw error;
-      
-      setCategories(data || []);
-    } catch (error) {
-      logger.error('Error fetching categories:', error);
+      setLoading(true);
+      const data = await CategoryService.getAll(parseInt(currentProjectId));
+      setCategories(data);
+    } catch (err) {
+      showError(err);
     } finally {
       setLoading(false);
     }
@@ -95,113 +80,79 @@ const Categories = () => {
 
   const handleSaveCategory = async () => {
     try {
-      // Get current project ID from localStorage
       const currentProjectId = localStorage.getItem('currentProjectId');
-      
+
       if (!currentProjectId) {
-        logger.error('No project ID found in localStorage');
-        alert('Proje bilgisi bulunamadı. Lütfen tekrar proje seçin.');
-        return;
-      }
-      
-      // Kategori adı boş kontrolü
-      if (!newCategoryName.trim()) {
-        alert('Kategori adı boş olamaz');
+        showError('Proje bulunamadı. Lütfen proje seçin.');
         return;
       }
 
-      // İlk harfi büyük geri kalanı küçük harfe çevir
+      if (!newCategoryName.trim()) {
+        showError('Kategori adı boş olamaz');
+        return;
+      }
+
       const formattedCategoryName = capitalizeFirstLetter(newCategoryName);
 
-      // Kategori mevcut mu kontrol et - sadece bilgilendirme için
-      const { data: existingCategories } = await supabase
-        .from('categories')
-        .select('id, name')
-        .eq('name', formattedCategoryName)
-        .eq('project_id', parseInt(currentProjectId));
-      
-      // Kategori düzenleniyorsa ve aynı isimde başka kategoriler varsa bilgilendir
-      if (existingCategories && existingCategories.length > 0 && 
-          (!editingCategory || (editingCategory && existingCategories.some(c => c.id !== editingCategory.id)))) {
-        const confirmMessage = editingCategory 
+      // Check if name exists (excluding current category if editing)
+      const nameExists = await CategoryService.nameExists(
+        formattedCategoryName,
+        parseInt(currentProjectId),
+        editingCategory?.id
+      );
+
+      if (nameExists) {
+        const confirmMessage = editingCategory
           ? `"${formattedCategoryName}" isimli başka kategoriler de var. Yine de bu ismi kullanmak istiyor musunuz?`
           : `"${formattedCategoryName}" isimli bir kategori zaten var. Aynı isimde yeni bir kategori eklemek istiyor musunuz?`;
-        
+
         if (!window.confirm(confirmMessage)) {
-          return; // Kullanıcı iptal ederse işlemi durdur
+          return;
         }
       }
 
-      // İşlemi gerçekleştir
       if (editingCategory) {
-        const { error } = await supabase
-          .from('categories')
-          .update({ name: formattedCategoryName })
-          .eq('id', editingCategory.id);
+        await CategoryService.update({
+          id: editingCategory.id,
+          name: formattedCategoryName,
+        });
 
-        if (error) {
-          logger.error('Kategori güncelleme hatası:', error);
-          throw error;
-        }
-        
-        // Etkinlik kaydı ekle
         try {
-          const activityLogged = await logActivity(
+          await logActivity(
             'category_update',
             `"${formattedCategoryName}" kategorisi güncellendi.`,
             'category',
             editingCategory.id
           );
-          logger.log('Category update activity logged:', activityLogged);
         } catch (activityError) {
-          logger.error('Failed to log category update activity:', activityError);
+          logger.error('Failed to log activity:', activityError);
         }
-        
-        alert(`Kategori başarıyla güncellendi: ${formattedCategoryName}`);
-      } else {
-        const { data, error } = await supabase
-          .from('categories')
-          .insert([{ 
-            name: formattedCategoryName,
-            project_id: parseInt(currentProjectId),
-            created_at: new Date().toISOString()
-          }])
-          .select();
 
-        if (error) {
-          logger.error('Kategori ekleme hatası:', error);
-          throw error;
+        setSuccessMessage(`Kategori başarıyla güncellendi: ${formattedCategoryName}`);
+      } else {
+        const created = await CategoryService.create({
+          name: formattedCategoryName,
+          project_id: parseInt(currentProjectId),
+        });
+
+        try {
+          await logActivity(
+            'category_create',
+            `"${formattedCategoryName}" kategorisi eklendi.`,
+            'category',
+            created.id
+          );
+        } catch (activityError) {
+          logger.error('Failed to log activity:', activityError);
         }
-        
-        // Etkinlik kaydı ekle
-        if (data && data.length > 0) {
-          try {
-            const activityLogged = await logActivity(
-              'category_create',
-              `"${formattedCategoryName}" kategorisi eklendi.`,
-              'category',
-              data[0].id
-            );
-            logger.log('Category creation activity logged:', activityLogged);
-          } catch (activityError) {
-            logger.error('Failed to log category creation activity:', activityError);
-          }
-        }
-        
-        alert(`Yeni kategori başarıyla eklendi: ${formattedCategoryName}`);
+
+        setSuccessMessage(`Yeni kategori başarıyla eklendi: ${formattedCategoryName}`);
       }
 
       handleCloseDialog();
       await fetchCategories();
-    } catch (error: any) {
-      logger.error('Error saving category:', error);
-      
-      // Daha detaylı hata mesajı göster
-      if (error.message && error.message.includes('duplicate key value')) {
-        alert('Bu isimde bir kategori zaten mevcut. Lütfen farklı bir isim kullanın.');
-      } else {
-        alert(`Kategori kaydedilemedi: ${error.message || 'Bilinmeyen hata'}`);
-      }
+    } catch (err) {
+      showError(err);
     }
   };
 
@@ -211,43 +162,34 @@ const Categories = () => {
     }
 
     try {
-      // Kategori bilgilerini al
-      const { data: categoryData, error: fetchError } = await supabase
-        .from('categories')
-        .select('name')
-        .eq('id', id)
-        .single();
-        
-      if (fetchError) {
-        logger.error('Kategori bilgisi alınamadı:', fetchError);
-      }
-      
-      const categoryName = categoryData?.name || 'Bilinmeyen kategori';
-      
-      const { error } = await supabase
-        .from('categories')
-        .delete()
-        .eq('id', id);
+      const currentProjectId = localStorage.getItem('currentProjectId');
 
-      if (error) throw error;
-      
-      // Etkinlik kaydı ekle
+      if (!currentProjectId) {
+        showError('Proje bulunamadı');
+        return;
+      }
+
+      // Get category name before deletion for activity log
+      const category = categories.find(c => c.id === id);
+      const categoryName = category?.name || 'Bilinmeyen kategori';
+
+      await CategoryService.delete(id, parseInt(currentProjectId));
+
       try {
-        const activityLogged = await logActivity(
+        await logActivity(
           'category_delete',
           `"${categoryName}" kategorisi silindi.`,
           'category',
           id
         );
-        logger.log('Category deletion activity logged:', activityLogged);
       } catch (activityError) {
-        logger.error('Failed to log category deletion activity:', activityError);
+        logger.error('Failed to log activity:', activityError);
       }
 
+      setSuccessMessage('Kategori başarıyla silindi');
       await fetchCategories();
-    } catch (error) {
-      logger.error('Error deleting category:', error);
-      alert('Kategori silinemedi. Bu kategoriye ait ürünler olabilir.');
+    } catch (err) {
+      showError(err);
     }
   };
 
@@ -265,9 +207,15 @@ const Categories = () => {
         </Button>
       </Box>
 
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }} onClose={clearError}>
+          {error.message}
+        </Alert>
+      )}
+
       {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-          <Typography>Yükleniyor...</Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+          <CircularProgress />
         </Box>
       ) : categories.length === 0 ? (
         <Paper sx={{ p: 3, textAlign: 'center' }}>
@@ -277,29 +225,30 @@ const Categories = () => {
         <Grid container spacing={3}>
           {categories.map((category) => (
             <Grid item xs={12} sm={6} md={4} key={category.id}>
-              <Paper>
-                <Typography variant="h6" sx={{ p: 2 }}>{category.name}</Typography>
-                <IconButton
-                  color="primary"
-                  onClick={() => handleOpenDialog(category)}
-                  sx={{ position: 'absolute', top: 5, right: 5 }}
-                >
-                  <EditIcon />
-                </IconButton>
-                <IconButton
-                  color="error"
-                  onClick={() => handleDeleteCategory(category.id)}
-                  sx={{ position: 'absolute', top: 5, right: 40 }}
-                >
-                  <DeleteIcon />
-                </IconButton>
+              <Paper sx={{ p: 2, position: 'relative' }}>
+                <Typography variant="h6">{category.name}</Typography>
+                <Box sx={{ position: 'absolute', top: 8, right: 8 }}>
+                  <IconButton
+                    color="primary"
+                    size="small"
+                    onClick={() => handleOpenDialog(category)}
+                  >
+                    <EditIcon />
+                  </IconButton>
+                  <IconButton
+                    color="error"
+                    size="small"
+                    onClick={() => handleDeleteCategory(category.id)}
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </Box>
               </Paper>
             </Grid>
           ))}
         </Grid>
       )}
 
-      {/* New/Edit Category Dialog */}
       <Dialog open={open} onClose={handleCloseDialog}>
         <DialogTitle>
           {editingCategory ? 'Kategori Düzenle' : 'Yeni Kategori'}
@@ -312,17 +261,33 @@ const Categories = () => {
             fullWidth
             value={newCategoryName}
             onChange={(e) => setNewCategoryName(e.target.value)}
+            onKeyPress={(e) => {
+              if (e.key === 'Enter') {
+                handleSaveCategory();
+              }
+            }}
           />
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDialog}>İptal</Button>
-          <Button onClick={handleSaveCategory} color="primary">
+          <Button onClick={handleSaveCategory} color="primary" variant="contained">
             Kaydet
           </Button>
         </DialogActions>
       </Dialog>
+
+      <Snackbar
+        open={!!successMessage}
+        autoHideDuration={3000}
+        onClose={() => setSuccessMessage('')}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert severity="success" onClose={() => setSuccessMessage('')}>
+          {successMessage}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 };
 
-export default Categories; 
+export default Categories;
