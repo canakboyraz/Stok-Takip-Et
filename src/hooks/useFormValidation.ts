@@ -30,16 +30,16 @@ interface UseFormValidationReturn<T> {
   touched: Record<keyof T, boolean>;
   isSubmitting: boolean;
   isValid: boolean;
-  handleChange: (field: keyof T, value: any) => void;
+  handleChange: (field: keyof T, value: unknown) => void;
   handleBlur: (field: keyof T) => void;
   handleSubmit: (e?: React.FormEvent) => Promise<void>;
-  setFieldValue: (field: keyof T, value: any) => void;
+  setFieldValue: (field: keyof T, value: unknown) => void;
   setFieldError: (field: keyof T, error: string) => void;
   resetForm: () => void;
   validateForm: () => boolean;
 }
 
-export function useFormValidation<T extends Record<string, any>>({
+export function useFormValidation<T extends Record<string, unknown>>({
   initialValues,
   validationRules,
   onSubmit,
@@ -54,7 +54,7 @@ export function useFormValidation<T extends Record<string, any>>({
    * Tek bir alanı valide et
    */
   const validateSingleField = useCallback(
-    (field: keyof T, value: any): string | null => {
+    (field: keyof T, value: unknown): string | null => {
       const rules = validationRules[field];
       if (!rules) return null;
 
@@ -86,7 +86,7 @@ export function useFormValidation<T extends Record<string, any>>({
    * Alan değerini değiştir
    */
   const handleChange = useCallback(
-    (field: keyof T, value: any) => {
+    (field: keyof T, value: unknown) => {
       setValues((prev) => ({ ...prev, [field]: value }));
 
       // Validate on change if enabled
@@ -121,7 +121,7 @@ export function useFormValidation<T extends Record<string, any>>({
   /**
    * Manuel olarak alan değerini set et
    */
-  const setFieldValue = useCallback((field: keyof T, value: any) => {
+  const setFieldValue = useCallback((field: keyof T, value: unknown) => {
     setValues((prev) => ({ ...prev, [field]: value }));
   }, []);
 

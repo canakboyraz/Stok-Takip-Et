@@ -26,7 +26,7 @@ export interface ValidationResult {
 }
 
 export interface FieldValidation {
-  value: any;
+  value: unknown;
   rules: ValidationRule[];
   fieldName?: string;
 }
@@ -44,13 +44,13 @@ export type ValidationRule =
   | { maxLength: number }
   | { min: number }
   | { max: number }
-  | { custom: (value: any) => boolean; message: string };
+  | { custom: (value: unknown) => boolean; message: string };
 
 /**
  * Tek bir alanı valide eder
  */
 export const validateField = (
-  value: any,
+  value: unknown,
   rules: ValidationRule[],
   fieldName: string = 'Alan'
 ): string | null => {
@@ -207,8 +207,8 @@ export const sanitizeInput = (input: string): string => {
 /**
  * Trim all string fields in an object
  */
-export const trimObjectStrings = <T extends Record<string, any>>(obj: T): T => {
-  const trimmed: any = {};
+export const trimObjectStrings = <T extends Record<string, unknown>>(obj: T): T => {
+  const trimmed: Record<string, unknown> = {};
 
   for (const [key, value] of Object.entries(obj)) {
     if (typeof value === 'string') {
@@ -218,16 +218,16 @@ export const trimObjectStrings = <T extends Record<string, any>>(obj: T): T => {
     }
   }
 
-  return trimmed;
+  return trimmed as T;
 };
 
 /**
  * Remove empty fields from object
  */
-export const removeEmptyFields = <T extends Record<string, any>>(
+export const removeEmptyFields = <T extends Record<string, unknown>>(
   obj: T
 ): Partial<T> => {
-  const cleaned: any = {};
+  const cleaned: Record<string, unknown> = {};
 
   for (const [key, value] of Object.entries(obj)) {
     if (value !== null && value !== undefined && value !== '') {
@@ -235,5 +235,5 @@ export const removeEmptyFields = <T extends Record<string, any>>(
     }
   }
 
-  return cleaned;
+  return cleaned as Partial<T>;
 };
