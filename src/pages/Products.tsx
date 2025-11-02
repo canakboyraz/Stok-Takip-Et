@@ -27,16 +27,22 @@ import {
   InputAdornment,
   Snackbar,
   Alert,
+  CircularProgress,
 } from '@mui/material';
 import { Delete as DeleteIcon, Edit as EditIcon, ExpandMore as ExpandMoreIcon, Search as SearchIcon } from '@mui/icons-material';
-import { supabase } from '../lib/supabase';
 import { Product, Category } from '../types/database';
 import { logActivity } from '../lib/activityLogger';
+import { ProductService } from '../services/productService';
+import { CategoryService } from '../services/categoryService';
+import { useErrorHandler } from '../hooks/useErrorHandler';
+import { logger } from '../utils/logger';
+import { formatErrorForDisplay } from '../utils/errorHandler';
 
 const Products = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [newProduct, setNewProduct] = useState<Partial<Product>>({
     name: '',
     code: '',
@@ -56,48 +62,37 @@ const Products = () => {
   const [expandedCategories, setExpandedCategories] = useState<number[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
 
+  const { showError } = useErrorHandler();
+
   useEffect(() => {
-    fetchProducts();
-    fetchCategories();
+    fetchData();
   }, []);
+
+  const fetchData = async () => {
+    await Promise.all([fetchProducts(), fetchCategories()]);
+  };
 
   const fetchProducts = async () => {
     try {
+      setLoading(true);
       const currentProjectId = localStorage.getItem('currentProjectId');
       if (!currentProjectId) {
-        console.error('Proje ID bulunamadı');
+        logger.error('Proje ID bulunamadı');
         return;
       }
 
-      const { data, error } = await supabase
-        .from('products')
-        .select(`
-          *,
-          categories:category_id (
-            id,
-            name
-          )
-        `)
-        .eq('project_id', currentProjectId)
-        .order('name');
-
-      if (error) throw error;
-      
-      const productsWithCategory = data.map((product) => ({
-        ...product,
-        category_name: product.categories?.name,
-      }));
-      
-      // Kategori adına göre sırala
-      const sortedProducts = productsWithCategory.sort((a, b) => {
-        const catA = a.category_name || '';
-        const catB = b.category_name || '';
-        return catA.localeCompare(catB);
+      const products = await ProductService.getAll({
+        projectId: parseInt(currentProjectId),
+        showZeroStock: true, // Tüm ürünleri göster, filtreleme client-side yapılacak
       });
-      
-      setProducts(sortedProducts);
+
+      setProducts(products);
+      logger.log(`Fetched ${products.length} products`);
     } catch (error) {
-      console.error('Error fetching products:', error);
+      logger.error('Error fetching products:', error);
+      showError(error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -105,20 +100,16 @@ const Products = () => {
     try {
       const currentProjectId = localStorage.getItem('currentProjectId');
       if (!currentProjectId) {
-        console.error('Proje ID bulunamadı');
+        logger.error('Proje ID bulunamadı');
         return;
       }
 
-      const { data, error } = await supabase
-        .from('categories')
-        .select('*')
-        .eq('project_id', currentProjectId)
-        .order('name');
-
-      if (error) throw error;
-      setCategories(data || []);
+      const categories = await CategoryService.getAll(parseInt(currentProjectId));
+      setCategories(categories);
+      logger.log(`Fetched ${categories.length} categories`);
     } catch (error) {
-      console.error('Error fetching categories:', error);
+      logger.error('Error fetching categories:', error);
+      showError(error);
     }
   };
 
@@ -147,7 +138,11 @@ const Products = () => {
         });
         setOpen(true);
       } else {
-        alert('Lütfen önce bir kategori oluşturun!');
+        setSnackbar({
+          open: true,
+          message: 'Lütfen önce bir kategori oluşturun!',
+          severity: 'warning'
+        });
       }
     }
   };
@@ -166,32 +161,34 @@ const Products = () => {
   };
 
   const handleSaveProduct = async () => {
-    if (!newProduct.name?.trim() || !newProduct.category_id) return;
+    if (!newProduct.name?.trim() || !newProduct.category_id) {
+      setSnackbar({
+        open: true,
+        message: 'Ürün adı ve kategori zorunludur!',
+        severity: 'warning'
+      });
+      return;
+    }
 
     try {
       const currentProjectId = localStorage.getItem('currentProjectId');
       if (!currentProjectId) {
-        console.error('Proje ID bulunamadı');
-        return;
+        throw new Error('Proje ID bulunamadı');
       }
 
       if (editingProduct) {
-        const { error } = await supabase
-          .from('products')
-          .update({
-            name: newProduct.name,
-            code: newProduct.code,
-            category_id: newProduct.category_id,
-            price: newProduct.price,
-            stock_quantity: newProduct.stock_quantity,
-            min_stock_level: newProduct.min_stock_level,
-          })
-          .eq('id', editingProduct.id)
-          .eq('project_id', currentProjectId);
+        // Update existing product
+        await ProductService.update({
+          id: editingProduct.id,
+          name: newProduct.name,
+          code: newProduct.code,
+          category_id: newProduct.category_id,
+          price: newProduct.price,
+          stock_quantity: newProduct.stock_quantity,
+          min_stock_level: newProduct.min_stock_level,
+        });
 
-        if (error) throw error;
-        
-        // Etkinlik kaydı ekle
+        // Log activity
         try {
           await logActivity(
             'product_update',
@@ -200,30 +197,27 @@ const Products = () => {
             editingProduct.id
           );
         } catch (activityError) {
-          console.error('❌ Etkinlik kaydı hatası (ürün güncellendi):', activityError);
+          logger.error('Etkinlik kaydı hatası (ürün güncellendi):', activityError);
         }
-        
+
         setSnackbar({
           open: true,
           message: 'Ürün başarıyla güncellendi!',
           severity: 'success'
         });
       } else {
-        const { error } = await supabase
-          .from('products')
-          .insert([{
-            name: newProduct.name,
-            code: newProduct.code,
-            category_id: newProduct.category_id,
-            price: newProduct.price,
-            stock_quantity: newProduct.stock_quantity,
-            min_stock_level: newProduct.min_stock_level,
-            project_id: parseInt(currentProjectId),
-          }]);
+        // Create new product
+        await ProductService.create({
+          name: newProduct.name!,
+          code: newProduct.code,
+          category_id: newProduct.category_id!,
+          price: newProduct.price!,
+          stock_quantity: newProduct.stock_quantity!,
+          min_stock_level: newProduct.min_stock_level,
+          project_id: parseInt(currentProjectId),
+        });
 
-        if (error) throw error;
-        
-        // Etkinlik kaydı ekle
+        // Log activity
         try {
           await logActivity(
             'product_create',
@@ -232,9 +226,9 @@ const Products = () => {
             null
           );
         } catch (activityError) {
-          console.error('❌ Etkinlik kaydı hatası (ürün eklendi):', activityError);
+          logger.error('Etkinlik kaydı hatası (ürün eklendi):', activityError);
         }
-        
+
         setSnackbar({
           open: true,
           message: 'Ürün başarıyla eklendi!',
@@ -245,63 +239,69 @@ const Products = () => {
       fetchProducts();
       handleClose();
     } catch (error) {
-      console.error('Error saving product:', error);
+      logger.error('Error saving product:', error);
+      const errorDetails = formatErrorForDisplay(error);
       setSnackbar({
         open: true,
-        message: 'Ürün kaydedilirken hata oluştu!',
+        message: errorDetails.message,
         severity: 'error'
       });
     }
   };
 
   const handleDeleteProduct = async (id: number) => {
-    if (window.confirm('Bu ürünü silmek istediğinizden emin misiniz? Bu işlem geri alınamaz!')) {
-      try {
-        setIsDeleting(id);
-        const { error } = await supabase
-          .from('products')
-          .delete()
-          .eq('id', id);
+    if (!window.confirm('Bu ürünü silmek istediğinizden emin misiniz? Bu işlem geri alınamaz!')) {
+      return;
+    }
 
-        if (error) throw error;
-        
-        // Etkinlik kaydı ekle (ürün adını önceden al)
-        try {
-          const productToDelete = products.find(p => p.id === id);
-          if (productToDelete) {
-            await logActivity(
-              'product_delete',
-              `Ürün silindi: ${productToDelete.name} (Kategori: ${productToDelete.category_name})`,
-              'product',
-              id
-            );
-          }
-        } catch (activityError) {
-          console.error('❌ Etkinlik kaydı hatası (ürün silindi):', activityError);
-        }
-        
-        setSnackbar({
-          open: true,
-          message: 'Ürün başarıyla silindi!',
-          severity: 'success'
-        });
-        fetchProducts();
-      } catch (error) {
-        console.error('Error deleting product:', error);
-        setSnackbar({
-          open: true,
-          message: 'Ürün silinirken hata oluştu!',
-          severity: 'error'
-        });
-      } finally {
-        setIsDeleting(null);
+    try {
+      setIsDeleting(id);
+      const currentProjectId = localStorage.getItem('currentProjectId');
+      if (!currentProjectId) {
+        throw new Error('Proje ID bulunamadı');
       }
+
+      // Get product info before deleting for activity log
+      const productToDelete = products.find(p => p.id === id);
+
+      await ProductService.delete(id, parseInt(currentProjectId));
+
+      // Log activity
+      if (productToDelete) {
+        try {
+          await logActivity(
+            'product_delete',
+            `Ürün silindi: ${productToDelete.name} (Kategori: ${productToDelete.category_name})`,
+            'product',
+            id
+          );
+        } catch (activityError) {
+          logger.error('Etkinlik kaydı hatası (ürün silindi):', activityError);
+        }
+      }
+
+      setSnackbar({
+        open: true,
+        message: 'Ürün başarıyla silindi!',
+        severity: 'success'
+      });
+      fetchProducts();
+    } catch (error) {
+      logger.error('Error deleting product:', error);
+      const errorDetails = formatErrorForDisplay(error);
+      setSnackbar({
+        open: true,
+        message: errorDetails.message,
+        severity: 'error'
+      });
+    } finally {
+      setIsDeleting(null);
     }
   };
 
   const handleToggleCategory = (categoryId: number) => {
-    setExpandedCategories(prev => 
-      prev.includes(categoryId) 
+    setExpandedCategories(prev =>
+      prev.includes(categoryId)
         ? prev.filter(id => id !== categoryId)
         : [...prev, categoryId]
     );
@@ -310,9 +310,9 @@ const Products = () => {
   // Filtrelenmiş ürünler
   const displayProducts = products
     .filter(product => showStockZero ? true : product.stock_quantity > 0)
-    .filter(product => 
-      searchTerm === '' || 
-      product.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    .filter(product =>
+      searchTerm === '' ||
+      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (product.category_name && product.category_name.toLowerCase().includes(searchTerm.toLowerCase()))
     );
 
@@ -326,6 +326,14 @@ const Products = () => {
 
   // Stok tükenen ürünler
   const stockoutProducts = products.filter(product => product.stock_quantity === 0);
+
+  if (loading) {
+    return (
+      <Container maxWidth="lg" sx={{ mt: 4, mb: 4, display: 'flex', justifyContent: 'center' }}>
+        <CircularProgress />
+      </Container>
+    );
+  }
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
@@ -388,8 +396,8 @@ const Products = () => {
                 {stockoutProducts.length > 5 && ` ve ${stockoutProducts.length - 5} ürün daha...`}
               </Typography>
               <Button
-                variant="contained" 
-                size="small" 
+                variant="contained"
+                size="small"
                 color="warning"
                 onClick={() => setShowStockZero(true)}
               >
@@ -403,15 +411,15 @@ const Products = () => {
       {/* Kategorilere göre accordion listesi */}
       {productsByCategory.length > 0 ? (
         productsByCategory.map(({ category, products }) => (
-          <Accordion 
-            key={category.id} 
+          <Accordion
+            key={category.id}
             expanded={expandedCategories.includes(category.id)}
             onChange={() => handleToggleCategory(category.id)}
             sx={{ mb: 2 }}
           >
             <AccordionSummary
               expandIcon={<ExpandMoreIcon />}
-              sx={{ 
+              sx={{
                 backgroundColor: 'primary.main',
                 color: 'white',
                 '&:hover': {
@@ -443,7 +451,7 @@ const Products = () => {
                   </TableHead>
                   <TableBody>
                     {products.map((product) => (
-                      <TableRow 
+                      <TableRow
                         key={product.id}
                         sx={{
                           backgroundColor: product.stock_quantity === 0 ? 'rgba(244, 67, 54, 0.1)' :
@@ -472,8 +480,8 @@ const Products = () => {
                         <TableCell align="right">{product.price?.toFixed(2)} ₺</TableCell>
                         <TableCell align="right">
                           <Typography
-                            color={product.stock_quantity === 0 ? 'error' : 
-                                   product.stock_quantity <= (product.min_stock_level || 0) ? 'warning.main' : 
+                            color={product.stock_quantity === 0 ? 'error' :
+                                   product.stock_quantity <= (product.min_stock_level || 0) ? 'warning.main' :
                                    'inherit'}
                             fontWeight={product.stock_quantity <= (product.min_stock_level || 0) ? 'bold' : 'normal'}
                           >
@@ -512,9 +520,9 @@ const Products = () => {
             {searchTerm ? 'Arama kriterlerine uygun ürün bulunamadı.' : 'Henüz ürün bulunmamaktadır.'}
           </Typography>
           {searchTerm && (
-            <Button 
-              variant="text" 
-              color="primary" 
+            <Button
+              variant="text"
+              color="primary"
               onClick={() => setSearchTerm('')}
               sx={{ mt: 2 }}
             >
