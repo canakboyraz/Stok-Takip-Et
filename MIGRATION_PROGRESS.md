@@ -65,7 +65,11 @@ All service classes created with comprehensive test coverage:
 
 ✅ Replaced direct Supabase calls with service methods
 ✅ Added useErrorHandler hook for consistent error handling
-✅ Fixed duplicate import statements (especially logger)
+✅ Fixed duplicate logger imports in 3 files:
+   - **Activities.tsx** (4 duplicate imports removed → 416→411 lines) ✅
+   - **Login.tsx** (1 duplicate import removed → 157→156 lines) ✅
+   - **Signup.tsx** (1 duplicate import removed → 170→169 lines) ✅
+   - Note: 4 more files identified (MenuAdd, Menus, Recipes, MenuConsumptionUndo - 3 duplicates each)
 ✅ Improved validation messages
 ✅ Better field naming consistency
 ✅ Enhanced type safety
@@ -75,22 +79,26 @@ All service classes created with comprehensive test coverage:
 
 ### High Priority (Medium Complexity)
 - [ ] **BulkStockOut.tsx** (474 lines) - Uses StockMovementService
-- [ ] **Recipes.tsx** (484 lines) - Uses RecipeService
+- [ ] **Recipes.tsx** (484 lines - 3 duplicate logger imports) - Uses RecipeService
 - [ ] **MenuConsumption.tsx** (494 lines) - Uses MenuService
-- [ ] **Activities.tsx** (416 lines) - Needs cleanup (4x duplicate logger imports)
 - [ ] **ProductTemplates.tsx** (578 lines)
-- [ ] **MenuConsumptionUndo.tsx** (588 lines) - Uses MenuService
+- [ ] **MenuConsumptionUndo.tsx** (588 lines - 3 duplicate logger imports) - Uses MenuService
 
 ### Low Priority (High Complexity - Skip for now)
 - [ ] **StockMovements.tsx** (1042 lines) - Very complex, deferred
-- [ ] **Menus.tsx** (875 lines) - Large file
-- [ ] **MenuAdd.tsx** (815 lines) - Large file
+- [ ] **Menus.tsx** (875 lines - 3 duplicate logger imports) - Large file
+- [ ] **MenuAdd.tsx** (815 lines - 3 duplicate logger imports) - Large file
 - [ ] **RecipeAdd.tsx** (976 lines) - Very large file
+
+### Completed Import Cleanup
+- ✅ **Activities.tsx** (411 lines) - Duplicate imports fixed ✅
+- ✅ **Login.tsx** (156 lines) - Duplicate imports fixed ✅
+- ✅ **Signup.tsx** (169 lines) - Duplicate imports fixed ✅
 
 ### No Migration Needed
 - ✅ **Events.tsx** (20 lines) - Placeholder page only
 - ✅ **ActivityLog.tsx** (15 lines) - Simple export
-- ✅ **Login.tsx**, **Signup.tsx**, **ProjectSelection.tsx** - Auth pages
+- ✅ **ProjectSelection.tsx** - Auth page
 
 ## Next Steps (Phase 3 & 4)
 
@@ -107,12 +115,13 @@ All service classes created with comprehensive test coverage:
 
 ## Statistics
 
-- **Services Created:** 6
-- **Test Cases Written:** 80+
-- **Pages Migrated:** 8
-- **Pages Remaining:** 6 high priority, 4 low priority
-- **Lines Reduced:** ~300+
-- **Duplicate Imports Fixed:** 20+ instances
+- **Services Created:** 6 (with comprehensive test coverage)
+- **Test Cases Written:** 80+ across all services
+- **Pages Migrated:** 8 (with service layer integration)
+- **Import Cleanup Completed:** 3 files (6 duplicate imports removed)
+- **Import Cleanup Identified:** 4 files (12 duplicate imports found)
+- **Pages Remaining:** 5 high priority, 4 low priority
+- **Lines Reduced:** ~320+ (through better architecture and cleanup)
 
 ## Commits
 
@@ -124,6 +133,9 @@ All service classes created with comprehensive test coverage:
 6. `refactor: Migrate ExpenseList page to ExpenseService`
 7. `refactor: Migrate PersonnelTimesheet page to PersonnelService`
 8. `refactor: Migrate Dashboard page to ProductService`
+9. `docs: Add comprehensive migration progress tracking document`
+10. `fix: Remove duplicate logger imports in Activities.tsx`
+11. `fix: Remove duplicate logger imports in auth pages (Login + Signup)`
 
 ## Branch
 
