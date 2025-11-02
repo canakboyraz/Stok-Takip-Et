@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
-import { logger } from '../utils/logger';
   Container,
   Box,
   Typography,

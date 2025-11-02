@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-import { logger } from '../utils/logger';
   Container,
   Paper,
   TextField,
