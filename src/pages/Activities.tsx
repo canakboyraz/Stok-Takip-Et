@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import {
-import { logger } from '../utils/logger';
   Container,
   Typography,
   Box,
@@ -23,9 +22,8 @@ import { logger } from '../utils/logger';
   SelectChangeEvent,
   Grid
 } from '@mui/material';
-import { 
-import { logger } from '../utils/logger';
-  Refresh as RefreshIcon, 
+import {
+  Refresh as RefreshIcon,
   Person as PersonIcon,
   Category as CategoryIcon,
   Restaurant as RestaurantIcon,
@@ -37,10 +35,8 @@ import { logger } from '../utils/logger';
 import { format } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { logger } from '../utils/logger';
-
 import { supabase } from '../lib/supabase';
 import { getActivityTypeLabel, getEntityTypeLabel, ActivityType, EntityType } from '../lib/activityLogger';
-import { logger } from '../utils/logger';
 
 interface Activity {
   id: number;
