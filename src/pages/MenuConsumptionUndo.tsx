@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import {
-import { logger } from '../utils/logger';
   Container,
   Paper,
   Typography,
@@ -26,7 +25,6 @@ import { logger } from '../utils/logger';
   Tooltip,
 } from '@mui/material';
 import {
-import { logger } from '../utils/logger';
   Undo as UndoIcon,
   AccessTime as AccessTimeIcon,
   Restaurant as RestaurantIcon,

@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-import { logger } from '../utils/logger';
   Container,
   Typography,
   Box,
@@ -31,7 +30,6 @@ import { logger } from '../utils/logger';
   TextField as MuiTextField
 } from '@mui/material';
 import {
-import { logger } from '../utils/logger';
   ArrowBack as ArrowBackIcon,
   Save as SaveIcon,
   Add as AddIcon

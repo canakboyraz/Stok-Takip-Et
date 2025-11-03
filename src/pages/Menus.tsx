@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-import { logger } from '../utils/logger';
   Container,
   Typography,
   Box,
@@ -34,7 +33,6 @@ import { logger } from '../utils/logger';
   ListItemSecondaryAction
 } from '@mui/material';
 import {
-import { logger } from '../utils/logger';
   Add as AddIcon,
   Edit as EditIcon,
   DeleteOutline as DeleteIcon,
