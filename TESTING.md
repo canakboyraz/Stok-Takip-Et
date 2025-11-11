@@ -144,9 +144,45 @@ Authentication flow integration testleri:
 - ✅ Error recovery
 - ✅ Auto-login with existing session
 
+#### 9. **Products.test.tsx** (~70 test case)
+Products sayfası testleri:
+- ✅ Data fetching and display
+- ✅ Add product dialog
+- ✅ Edit product
+- ✅ Delete product (with confirmation)
+- ✅ Search and filter functionality
+- ✅ Stock zero filter
+- ✅ Category accordion grouping
+- ✅ Error handling (missing project, fetch errors)
+- ✅ Accessibility
+
+#### 10. **Dashboard.test.tsx** (~50 test case)
+Dashboard sayfası testleri:
+- ✅ Statistics cards (total products, expiring products, total value)
+- ✅ Expiry date handling and color coding
+- ✅ Product table display
+- ✅ Loading states
+- ✅ Error handling (fetch errors, no project selected)
+- ✅ Currency formatting
+- ✅ Accessibility
+
+### ✅ Shared Component Testler
+
+#### 11. **ProductNameComboBox.test.tsx** (~60 test case)
+Autocomplete component testleri:
+- ✅ Rendering (required, error, disabled states)
+- ✅ Data fetching from product templates
+- ✅ User interaction (typing, selecting)
+- ✅ Auto-capitalization
+- ✅ Category auto-fill
+- ✅ Dropdown options display
+- ✅ Loading and error states
+- ✅ Value prop handling
+- ✅ Edge cases (empty, special characters)
+
 ### 📚 Component Test Şablonu
 
-#### 9. **example.component.test.tsx**
+#### 12. **example.component.test.tsx**
 Component testleri için örnek şablon:
 - ✅ Button interaction testleri
 - ✅ Form handling testleri
@@ -155,11 +191,12 @@ Component testleri için örnek şablon:
 
 ## 📊 Test İstatistikleri
 
-**Toplam Test Case: ~545+**
+**Toplam Test Case: ~725+**
 - Utility Tests: ~215
 - Library Tests: ~60
 - Custom Hooks: ~80
-- Page Components: ~160
+- Page Components: ~280 (Login, Categories, Products, Dashboard)
+- Shared Components: ~60 (ProductNameComboBox)
 - Integration Tests: ~30
 
 ## Coverage Hedefleri
