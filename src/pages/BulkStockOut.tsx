@@ -20,6 +20,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { Product } from '../types/database';
 import { logActivity } from '../lib/activityLogger';
+import { logger } from '../utils/logger';
 
 interface SelectedProduct extends Product {
   quantity: number;
@@ -48,7 +49,7 @@ const BulkStockOut = () => {
 
       setProjectId(parseInt(storedProjectId));
 
-      console.log('Fetching products for project:', storedProjectId);
+      logger.log('Fetching products for project:', storedProjectId);
       
       const { data, error } = await supabase
         .from('products')
@@ -63,13 +64,13 @@ const BulkStockOut = () => {
         .order('name', { ascending: true }); // Ürün adına göre A-Z sıralama
 
       if (error) {
-        console.error('Error fetching products:', error);
+        logger.error('Error fetching products:', error);
         setError('Ürünler yüklenirken bir hata oluştu');
         setLoading(false);
         return;
       }
 
-      console.log('Fetched products:', data);
+      logger.log('Fetched products:', data);
 
       // Map the products with additional fields for UI state
       const productsWithAddedFields = data.map(product => ({
@@ -82,7 +83,7 @@ const BulkStockOut = () => {
       setProducts(productsWithAddedFields);
       setLoading(false);
     } catch (error: any) {
-      console.error('Unexpected error in fetchProducts:', error);
+      logger.error('Unexpected error in fetchProducts:', error);
       setError('Ürünler yüklenirken beklenmeyen bir hata oluştu');
       setLoading(false);
     }
@@ -99,8 +100,8 @@ const BulkStockOut = () => {
     
     const parsedProjectId = parseInt(currentProjectId);
     setProjectId(parsedProjectId);
-    
-    console.log('Current project ID:', parsedProjectId);
+
+    logger.log('Current project ID:', parsedProjectId);
     fetchProducts();
   }, [fetchProducts, navigate]);
 
@@ -108,7 +109,7 @@ const BulkStockOut = () => {
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'currentProjectId') {
-        console.log('Project changed, refetching products');
+        logger.log('Project changed, refetching products');
         const newProjectId = e.newValue ? parseInt(e.newValue) : null;
         setProjectId(newProjectId);
         fetchProducts();
@@ -127,9 +128,9 @@ const BulkStockOut = () => {
     
     // Check if all products belong to the current project
     const wrongProjectProducts = products.filter(p => p.project_id !== projectId);
-    
+
     if (wrongProjectProducts.length > 0) {
-      console.error('Products from wrong project detected:', wrongProjectProducts);
+      logger.error('Products from wrong project detected:', wrongProjectProducts);
       setError('Farklı projelere ait ürünler tespit edildi! Sayfa yenileniyor...');
       
       // Clear products and fetch again
@@ -194,7 +195,7 @@ const BulkStockOut = () => {
       const nonProjectProducts = selectedProducts.filter(p => p.project_id !== projectId);
       if (nonProjectProducts.length > 0) {
         setError(`Seçilen ürünlerden bazıları bu projeye ait değil. Lütfen sayfayı yenileyin.`);
-        console.error('Products from other projects detected:', nonProjectProducts);
+        logger.error('Products from other projects detected:', nonProjectProducts);
         return;
       }
 
@@ -212,7 +213,7 @@ const BulkStockOut = () => {
 
       // Benzersiz bir toplu çıkış ID'si oluştur
       const bulkId = Date.now();
-      console.log('Generated bulk ID:', bulkId);
+      logger.log('Generated bulk ID:', bulkId);
       
       let totalCost = 0;
 
@@ -225,7 +226,7 @@ const BulkStockOut = () => {
         const itemCost = product.quantity * unitPrice;
         totalCost += itemCost;
 
-        console.log(`Processing product: ${product.name}, quantity: ${product.quantity}, unitPrice: ${unitPrice}, cost: ${itemCost}`);
+        logger.log(`Processing product: ${product.name}, quantity: ${product.quantity}, unitPrice: ${unitPrice}, cost: ${itemCost}`);
 
         // Stok hareketini kaydet
         const stockMovementData = {
@@ -239,20 +240,20 @@ const BulkStockOut = () => {
           bulk_id: bulkId,
           project_id: projectId // Add project_id to stock movements
         };
-        
-        console.log('Inserting stock movement:', stockMovementData);
-        
+
+        logger.log('Inserting stock movement:', stockMovementData);
+
         const { data: movementData, error: movementError } = await supabase
           .from('stock_movements')
           .insert([stockMovementData])
           .select();
 
         if (movementError) {
-          console.error('Stok hareketi hatası:', movementError);
+          logger.error('Stok hareketi hatası:', movementError);
           throw movementError;
         }
-        
-        console.log('Inserted movement data:', movementData);
+
+        logger.log('Inserted movement data:', movementData);
 
         // Ürün stoğunu güncelle - proje kontrolü ile
         const { error: updateError } = await supabase
@@ -262,7 +263,7 @@ const BulkStockOut = () => {
           .eq('project_id', projectId); // Double check project_id for safety
 
         if (updateError) {
-          console.error('Stok güncelleme hatası:', updateError);
+          logger.error('Stok güncelleme hatası:', updateError);
           throw updateError;
         }
       }
@@ -277,38 +278,38 @@ const BulkStockOut = () => {
           type: 'out',
           project_id: projectId
         });
-      
+
       if (bulkMovementError) {
-        console.error('Bulk movement error:', bulkMovementError);
+        logger.error('Bulk movement error:', bulkMovementError);
         throw bulkMovementError;
       }
 
-      console.log(`Bulk stock out completed with ID ${bulkId} and total cost ${totalCost}`);
+      logger.log(`Bulk stock out completed with ID ${bulkId} and total cost ${totalCost}`);
       
       // Etkinlik kaydı ekle - Hata olsa bile stok işlemi tamamlanmış olsun
       try {
         const productNames = selectedProducts.map(p => p.name).join(', ');
-        console.log('🔍 BulkStockOut: Etkinlik kaydı ekleniyor...', {
+        logger.log('🔍 BulkStockOut: Etkinlik kaydı ekleniyor...', {
           type: 'stock_bulk_out',
           description: `Toplu stok çıkışı - ${selectedProducts.length} ürün (${productNames}) - Toplam: ${totalCost.toFixed(2)} ₺`,
           entity_type: 'bulk_movement',
           entity_id: bulkId
         });
-        
+
         const activityResult = await logActivity(
           'stock_bulk_out',
           `Toplu stok çıkışı - ${selectedProducts.length} ürün (${productNames}) - Toplam: ${totalCost.toFixed(2)} ₺`,
           'bulk_movement',
           bulkId
         );
-        
-        console.log('🔍 BulkStockOut: Etkinlik kaydı sonucu:', activityResult);
-        
+
+        logger.log('🔍 BulkStockOut: Etkinlik kaydı sonucu:', activityResult);
+
         if (!activityResult) {
-          console.warn('⚠️ Etkinlik kaydı başarısız oldu ama stok işlemi tamamlandı');
+          logger.warn('⚠️ Etkinlik kaydı başarısız oldu ama stok işlemi tamamlandı');
         }
       } catch (activityError) {
-        console.error('❌ Etkinlik kaydı hatası (stok işlemi başarılı):', activityError);
+        logger.error('❌ Etkinlik kaydı hatası (stok işlemi başarılı):', activityError);
         // Etkinlik kaydı hatası stok işlemini etkilememeli
       }
       
@@ -320,7 +321,7 @@ const BulkStockOut = () => {
       }, 1500);
       
     } catch (error: any) {
-      console.error('Error in bulk stock out:', error);
+      logger.error('Error in bulk stock out:', error);
       setError('Stok çıkışı sırasında bir hata oluştu: ' + (error.message || 'Bilinmeyen hata'));
     }
   };

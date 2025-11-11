@@ -22,8 +22,8 @@ import {
   SelectChangeEvent,
   Grid
 } from '@mui/material';
-import { 
-  Refresh as RefreshIcon, 
+import {
+  Refresh as RefreshIcon,
   Person as PersonIcon,
   Category as CategoryIcon,
   Restaurant as RestaurantIcon,
@@ -34,7 +34,7 @@ import {
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 import { tr } from 'date-fns/locale';
-
+import { logger } from '../utils/logger';
 import { supabase } from '../lib/supabase';
 import { getActivityTypeLabel, getEntityTypeLabel, ActivityType, EntityType } from '../lib/activityLogger';
 
@@ -84,20 +84,20 @@ const Activities = () => {
       }
 
       if (data) {
-        console.log('🔍 Activities: Yüklenen etkinlik sayısı:', data.length);
-        console.log('🔍 Activities: İlk 3 etkinlik:', data.slice(0, 3));
+        logger.log('🔍 Activities: Yüklenen etkinlik sayısı:', data.length);
+        logger.log('🔍 Activities: İlk 3 etkinlik:', data.slice(0, 3));
         
         // Etkinlik türlerinin dağılımını göster
         const activityTypes = data.reduce((acc: any, activity: any) => {
           acc[activity.action_type] = (acc[activity.action_type] || 0) + 1;
           return acc;
         }, {});
-        console.log('🔍 Activities: Etkinlik türleri dağılımı:', activityTypes);
+        logger.log('🔍 Activities: Etkinlik türleri dağılımı:', activityTypes);
         
         // Son 5 etkinliği detaylı göster
-        console.log('🔍 Activities: Son 5 etkinlik detayları:');
+        logger.log('🔍 Activities: Son 5 etkinlik detayları:');
         data.slice(0, 5).forEach((activity: any, index: number) => {
-          console.log(`${index + 1}. ${activity.action_type} - ${activity.action_description} (${new Date(activity.created_at).toLocaleString()})`);
+          logger.log(`${index + 1}. ${activity.action_type} - ${activity.action_description} (${new Date(activity.created_at).toLocaleString()})`);
         });
         
         setActivities(data as Activity[]);
@@ -116,7 +116,7 @@ const Activities = () => {
         setUniqueUsers(users);
       }
     } catch (error: any) {
-      console.error('Etkinlik kayıtları yüklenirken hata:', error);
+      logger.error('Etkinlik kayıtları yüklenirken hata:', error);
       setError(`Etkinlik kayıtları yüklenirken bir hata oluştu: ${error.message}`);
     } finally {
       setLoading(false);

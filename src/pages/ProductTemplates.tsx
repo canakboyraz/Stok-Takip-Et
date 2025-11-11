@@ -27,6 +27,7 @@ import {
 import { Delete as DeleteIcon, Edit as EditIcon, Add as AddIcon } from '@mui/icons-material';
 import { supabase } from '../lib/supabase';
 import { capitalizeFirstLetter } from '../lib/formatHelpers';
+import { logger } from '../utils/logger';
 
 interface ProductTemplate {
   id: number;
@@ -82,12 +83,12 @@ const ProductTemplates = () => {
       const { data: { session }, error } = await supabase.auth.getSession();
       
       if (error) {
-        console.error('Oturum kontrolünde hata:', error);
+        logger.error('Oturum kontrolünde hata:', error);
         return;
       }
       
       if (!session) {
-        console.error('Aktif oturum bulunamadı!');
+        logger.error('Aktif oturum bulunamadı!');
         setSnackbar({
           open: true,
           message: 'Oturum bilgileriniz bulunamadı. Lütfen tekrar giriş yapın.',
@@ -96,9 +97,9 @@ const ProductTemplates = () => {
         return;
       }
       
-      console.log('Aktif kullanıcı:', session.user.id);
+      logger.log('Aktif kullanıcı:', session.user.id);
     } catch (error) {
-      console.error('Oturum kontrolünde beklenmeyen hata:', error);
+      logger.error('Oturum kontrolünde beklenmeyen hata:', error);
     }
   };
 
@@ -108,11 +109,11 @@ const ProductTemplates = () => {
       const currentProjectId = localStorage.getItem('currentProjectId');
       
       if (!currentProjectId) {
-        console.error('No project ID found in localStorage');
+        logger.error('No project ID found in localStorage');
         return;
       }
       
-      console.log(`Fetching templates for project ID: ${currentProjectId}`);
+      logger.log(`Fetching templates for project ID: ${currentProjectId}`);
       
       // Sadece mevcut projeye ait şablonları getir
       const { data, error } = await supabase
@@ -122,8 +123,8 @@ const ProductTemplates = () => {
         .order('name');
 
       if (error) {
-        console.error('Error fetching templates:', error);
-        console.error('Error details:', JSON.stringify(error));
+        logger.error('Error fetching templates:', error);
+        logger.error('Error details:', JSON.stringify(error));
         setSnackbar({
           open: true,
           message: 'Ürün şablonları yüklenirken bir hata oluştu.',
@@ -132,18 +133,18 @@ const ProductTemplates = () => {
         return;
       }
 
-      console.log('Fetched templates for current project:', data);
-      console.log('Template count for current project:', data ? data.length : 0);
+      logger.log('Fetched templates for current project:', data);
+      logger.log('Template count for current project:', data ? data.length : 0);
       
       if (data && data.length === 0) {
-        console.log('Hiç şablon bulunamadı. Sorgu ve proje ID kontrol edilmeli.');
-        console.log('Current query:', `project_id = ${parseInt(currentProjectId)}`);
+        logger.log('Hiç şablon bulunamadı. Sorgu ve proje ID kontrol edilmeli.');
+        logger.log('Current query:', `project_id = ${parseInt(currentProjectId)}`);
       }
       
       setTemplates(data || []);
     } catch (error) {
-      console.error('Error in fetchTemplates:', error);
-      console.error('Stack trace:', error instanceof Error ? error.stack : 'No stack trace');
+      logger.error('Error in fetchTemplates:', error);
+      logger.error('Stack trace:', error instanceof Error ? error.stack : 'No stack trace');
       setSnackbar({
         open: true,
         message: 'Ürün şablonları yüklenirken bir hata oluştu.',
@@ -159,12 +160,12 @@ const ProductTemplates = () => {
       const currentProjectId = localStorage.getItem('currentProjectId');
       
       if (!currentProjectId) {
-        console.error('No project ID found in localStorage for base categories');
+        logger.error('No project ID found in localStorage for base categories');
         setFetchedCategories([]);
         return;
       }
       
-      console.log('🔍 Base categories (categories table only) loading. Project ID:', currentProjectId);
+      logger.log('🔍 Base categories (categories table only) loading. Project ID:', currentProjectId);
       
       const { data, error } = await supabase
         .from('categories')
@@ -173,19 +174,19 @@ const ProductTemplates = () => {
         .order('name');
 
       if (error) {
-        console.error('❌ Base category loading error:', error);
+        logger.error('❌ Base category loading error:', error);
         setFetchedCategories([]);
         throw error;
       }
       
-      console.log('✅ Base categories from DB (categories table):', data);
+      logger.log('✅ Base categories from DB (categories table):', data);
       
       const categoryNames = data ? data.map(category => capitalizeFirstLetter(category.name)) : [];
-      console.log('📋 Base category names (categories table):', categoryNames);
+      logger.log('📋 Base category names (categories table):', categoryNames);
       
       setFetchedCategories(categoryNames);
     } catch (error) {
-      console.error('Error fetching base categories:', error);
+      logger.error('Error fetching base categories:', error);
       setFetchedCategories([]);
     }
   };
@@ -260,7 +261,7 @@ const ProductTemplates = () => {
           severity: 'success'
         });
       } else {
-        console.log('Eklenecek şablon:', {
+        logger.log('Eklenecek şablon:', {
           name: formattedName,
           category: formattedCategory,
           description: formData.description,
@@ -278,7 +279,7 @@ const ProductTemplates = () => {
           });
           
           if (error) {
-            console.log('RPC hatası, normal insert deneniyor:', error);
+            logger.log('RPC hatası, normal insert deneniyor:', error);
             const { data: insertData, error: insertError } = await supabase
               .from('product_templates')
               .insert([{
@@ -291,12 +292,12 @@ const ProductTemplates = () => {
               .select();
               
             if (insertError) throw insertError;
-            console.log('Normal insert başarılı:', insertData);
+            logger.log('Normal insert başarılı:', insertData);
             if (insertData && insertData.length > 0) {
               setTemplates(prevTemplates => [...prevTemplates, ...insertData]);
             }
           } else {
-            console.log('RPC başarılı:', data);
+            logger.log('RPC başarılı:', data);
             if (data) {
               if (typeof data === 'number') {
                 const newTemplate = {
@@ -317,7 +318,7 @@ const ProductTemplates = () => {
           await fetchTemplates();
           
         } catch (insertError) {
-          console.error('Şablon ekleme hatası:', insertError);
+          logger.error('Şablon ekleme hatası:', insertError);
           throw insertError;
         }
         
@@ -331,8 +332,8 @@ const ProductTemplates = () => {
       setOpen(false);
       reloadPage();
     } catch (error) {
-      console.error('Error saving product template:', error);
-      console.error('Stack trace:', error instanceof Error ? error.stack : 'No stack trace');
+      logger.error('Error saving product template:', error);
+      logger.error('Stack trace:', error instanceof Error ? error.stack : 'No stack trace');
       setSnackbar({
         open: true,
         message: 'Ürün şablonu kaydedilirken bir hata oluştu.',
@@ -363,7 +364,7 @@ const ProductTemplates = () => {
         reloadPage();
       }, 500);
     } catch (error) {
-      console.error('Error deleting product template:', error);
+      logger.error('Error deleting product template:', error);
       setSnackbar({
         open: true,
         message: 'Ürün şablonu silinirken bir hata oluştu.',
@@ -403,7 +404,7 @@ const ProductTemplates = () => {
       }
     });
     
-    console.log('🔄 Combined unique categories for Autocomplete:', uniqueCategories);
+    logger.log('🔄 Combined unique categories for Autocomplete:', uniqueCategories);
     return uniqueCategories.sort();
   }, [templates, fetchedCategories]);
 

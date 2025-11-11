@@ -33,9 +33,10 @@ import {
 import { supabase } from '../lib/supabase';
 import { Project } from '../types/database';
 import ProjectPermissions from '../components/ProjectPermissions';
+import { logger } from '../utils/logger';
 
 const ProjectSelection = () => {
-  console.log('[ProjectSelection] Bileşen yükleniyor...');
+  logger.log('[ProjectSelection] Bileşen yükleniyor...');
   
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
@@ -69,7 +70,7 @@ const ProjectSelection = () => {
       // Kullanıcı e-posta bilgisini kaydet
       setUserEmail(userData.user.email || 'E-posta bulunamadı');
       
-      console.log(`Kullanıcı: ${userData.user.email} (${userData.user.id}) için projeler getiriliyor`);
+      logger.log(`Kullanıcı: ${userData.user.email} (${userData.user.id}) için projeler getiriliyor`);
 
       // Direkt sorgu yöntemi - UUID tip dönüşümü ile
       try {
@@ -110,9 +111,9 @@ const ProjectSelection = () => {
           sharedProjectDetails = projectDetails || [];
         }
         
-        console.log('Direkt sorgu başarılı - Kendi projeleri:', ownProjects);
-        console.log('Direkt sorgu başarılı - Paylaşılan projeler:', sharedProjectsData);
-        console.log('Direkt sorgu başarılı - Paylaşılan proje detayları:', sharedProjectDetails);
+        logger.log('Direkt sorgu başarılı - Kendi projeleri:', ownProjects);
+        logger.log('Direkt sorgu başarılı - Paylaşılan projeler:', sharedProjectsData);
+        logger.log('Direkt sorgu başarılı - Paylaşılan proje detayları:', sharedProjectDetails);
         
         // Kendi projelerini ayarla
         setProjects(ownProjects || []);
@@ -130,14 +131,14 @@ const ProjectSelection = () => {
           };
         }) || [];
         
-        console.log('Formatlanmış paylaşılan projeler:', formattedSharedProjects);
+        logger.log('Formatlanmış paylaşılan projeler:', formattedSharedProjects);
         setSharedProjects(formattedSharedProjects);
       } catch (error: any) {
-        console.error('Projeler yüklenirken hata:', error);
+        logger.error('Projeler yüklenirken hata:', error);
         throw error;
       }
     } catch (error: any) {
-      console.error('Error fetching projects:', error);
+      logger.error('Error fetching projects:', error);
       setSnackbar({
         open: true,
         message: `Projeler yüklenirken hata oluştu: ${error.message}`,
@@ -154,20 +155,20 @@ const ProjectSelection = () => {
   }, [navigate]);
 
   useEffect(() => {
-    console.log('[ProjectSelection] useEffect tetiklendi, projeler getiriliyor...');
+    logger.log('[ProjectSelection] useEffect tetiklendi, projeler getiriliyor...');
     checkUserAndFetchProjects();
   }, [checkUserAndFetchProjects]);
 
   const handleOpenProject = (projectId: number) => {
     try {
-      console.log(`[ProjectSelection] Proje seçildi, ID: ${projectId}`);
+      logger.log(`[ProjectSelection] Proje seçildi, ID: ${projectId}`);
       
       // Projenin mevcut kullanıcı için erişilebilir olduğunu kontrol et
       const isOwnProject = projects.some(p => p.id === projectId);
       const isSharedProject = sharedProjects.some(p => p.project_id === projectId);
       
       if (!isOwnProject && !isSharedProject) {
-        console.error(`[ProjectSelection] Proje erişim hatası: ID ${projectId} için yetki yok`);
+        logger.error(`[ProjectSelection] Proje erişim hatası: ID ${projectId} için yetki yok`);
         throw new Error('Bu projeye erişim yetkiniz yok!');
       }
       
@@ -177,20 +178,20 @@ const ProjectSelection = () => {
       
       // localStorage'da değerin doğru ayarlandığını kontrol et
       const savedId = localStorage.getItem('currentProjectId');
-      console.log(`[ProjectSelection] localStorage'a kaydedilen proje ID: ${savedId}`);
+      logger.log(`[ProjectSelection] localStorage'a kaydedilen proje ID: ${savedId}`);
       
       if (savedId !== projectId.toString()) {
-        console.error(`[ProjectSelection] localStorage'a kayıt hatası: ${savedId} != ${projectId}`);
+        logger.error(`[ProjectSelection] localStorage'a kayıt hatası: ${savedId} != ${projectId}`);
         throw new Error('Proje ID localStorage\'a kaydedilemedi');
       }
       
       // Dashboard'a yönlendir
       setTimeout(() => {
-        console.log(`[ProjectSelection] Dashboard'a yönlendiriliyor`);
+        logger.log(`[ProjectSelection] Dashboard'a yönlendiriliyor`);
         navigate('/dashboard');
       }, 100); // localStorage'un güncellenmesi için kısa bir gecikme
     } catch (error) {
-      console.error('[ProjectSelection] Proje açma hatası:', error);
+      logger.error('[ProjectSelection] Proje açma hatası:', error);
       setSnackbar({
         open: true,
         message: 'Proje açılırken bir hata oluştu',
@@ -206,7 +207,7 @@ const ProjectSelection = () => {
       localStorage.removeItem('currentProjectId');
       navigate('/');
     } catch (error: any) {
-      console.error('Çıkış hatası:', error);
+      logger.error('Çıkış hatası:', error);
       setSnackbar({
         open: true,
         message: `Çıkış yapılırken hata oluştu: ${error.message}`,
@@ -294,7 +295,7 @@ const ProjectSelection = () => {
       handleCloseDialog();
       checkUserAndFetchProjects();
     } catch (error: any) {
-      console.error('Error saving project:', error);
+      logger.error('Error saving project:', error);
       setSnackbar({
         open: true,
         message: `Proje kaydedilirken hata oluştu: ${error.message}`,
@@ -311,7 +312,7 @@ const ProjectSelection = () => {
     try {
       setLoading(true);
       // İlişkili verileri silme sırası çok önemli
-      console.log(`Proje ID: ${projectId} siliniyor, ilişkili tüm veriler temizleniyor...`);
+      logger.log(`Proje ID: ${projectId} siliniyor, ilişkili tüm veriler temizleniyor...`);
       
       // 1. Menü tarifleri - menüler silinmeden önce bunlar silinmeli
       const { error: menuRecipesError } = await supabase
@@ -320,7 +321,7 @@ const ProjectSelection = () => {
         .eq('menu_id', projectId);
       
       if (menuRecipesError) {
-        console.error("Menü tarifleri silinemedi:", menuRecipesError);
+        logger.error("Menü tarifleri silinemedi:", menuRecipesError);
       }
       
       // 2. Menüler
@@ -330,7 +331,7 @@ const ProjectSelection = () => {
         .eq('project_id', projectId);
       
       if (menuError) {
-        console.error("Menüler silinemedi:", menuError);
+        logger.error("Menüler silinemedi:", menuError);
       }
       
       // 3. Tarif malzemeleri - tarifler silinmeden önce bunlar silinmeli
@@ -348,7 +349,7 @@ const ProjectSelection = () => {
           .in('recipe_id', recipeIds);
           
         if (ingredientsError) {
-          console.error("Tarif malzemeleri silinemedi:", ingredientsError);
+          logger.error("Tarif malzemeleri silinemedi:", ingredientsError);
           throw ingredientsError;
         }
       }
@@ -360,7 +361,7 @@ const ProjectSelection = () => {
         .eq('project_id', projectId);
       
       if (recipesError) {
-        console.error("Tarifler silinemedi:", recipesError);
+        logger.error("Tarifler silinemedi:", recipesError);
         throw recipesError;
       }
       
@@ -371,7 +372,7 @@ const ProjectSelection = () => {
         .eq('project_id', projectId);
       
       if (moveError) {
-        console.error("Stok hareketleri silinemedi:", moveError);
+        logger.error("Stok hareketleri silinemedi:", moveError);
         throw moveError;
       }
       
@@ -382,7 +383,7 @@ const ProjectSelection = () => {
         .eq('project_id', projectId);
         
       if (personnelError) {
-        console.error("Personel kayıtları silinemedi:", personnelError);
+        logger.error("Personel kayıtları silinemedi:", personnelError);
       }
       
       // 7. Ürünler
@@ -392,7 +393,7 @@ const ProjectSelection = () => {
         .eq('project_id', projectId);
       
       if (productError) {
-        console.error("Ürünler silinemedi:", productError);
+        logger.error("Ürünler silinemedi:", productError);
         throw productError;
       }
       
@@ -403,7 +404,7 @@ const ProjectSelection = () => {
         .eq('project_id', projectId);
       
       if (categoryError) {
-        console.error("Kategoriler silinemedi:", categoryError);
+        logger.error("Kategoriler silinemedi:", categoryError);
         throw categoryError;
       }
       
@@ -414,7 +415,7 @@ const ProjectSelection = () => {
         .eq('project_id', projectId);
         
       if (permissionsError) {
-        console.error("Proje izinleri silinemedi:", permissionsError);
+        logger.error("Proje izinleri silinemedi:", permissionsError);
       }
       
       // 10. Son olarak projeyi sil
@@ -424,7 +425,7 @@ const ProjectSelection = () => {
         .eq('id', projectId);
 
       if (error) {
-        console.error("Proje silinemedi:", error);
+        logger.error("Proje silinemedi:", error);
         throw error;
       }
 
@@ -436,7 +437,7 @@ const ProjectSelection = () => {
       
       checkUserAndFetchProjects();
     } catch (error: any) {
-      console.error('Error deleting project:', error);
+      logger.error('Error deleting project:', error);
       setSnackbar({
         open: true,
         message: `Proje silinirken hata oluştu: ${error.message}`,

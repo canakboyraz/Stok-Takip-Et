@@ -9,6 +9,7 @@ import Button from '@mui/material/Button';
 
 // Components
 import Layout from './components/Layout';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // Pages
 import Login from './pages/Login';
@@ -204,48 +205,50 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({ children, requireProject = 
 
 function App() {
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <Router>
-        <ProjectProvider>
-          <Routes>
-            <Route path="/" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            <Route path="/auth/callback" element={<AuthCallback />} />
-            <Route path="/projects" element={<PrivateRoute requireProject={false}><ProjectSelection /></PrivateRoute>} />
-            <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
-            <Route path="/products" element={<PrivateRoute><Products /></PrivateRoute>} />
-            <Route path="/stock-movements" element={<PrivateRoute><StockMovements /></PrivateRoute>} />
-            <Route path="/bulk-stock-out" element={<PrivateRoute><BulkStockOut /></PrivateRoute>} />
-            <Route path="/categories" element={<PrivateRoute><Categories /></PrivateRoute>} />
-            <Route path="/personnel-add" element={<PrivateRoute><PersonnelAdd /></PrivateRoute>} />
-            <Route path="/personnel-edit/:id" element={<PrivateRoute><PersonnelAdd /></PrivateRoute>} />
-            <Route path="/personnel-timesheet/:id" element={<PrivateRoute><PersonnelTimesheet /></PrivateRoute>} />
-            <Route path="/product-templates" element={<PrivateRoute><ProductTemplates /></PrivateRoute>} />
-            <Route path="/recipes" element={<PrivateRoute><Recipes /></PrivateRoute>} />
-            <Route path="/recipe-add" element={<PrivateRoute><RecipeAdd /></PrivateRoute>} />
-            <Route path="/recipe-edit/:id" element={<PrivateRoute><RecipeAdd /></PrivateRoute>} />
-            <Route path="/menus" element={<PrivateRoute><Menus /></PrivateRoute>} />
-            <Route path="/menu-add" element={<PrivateRoute><MenuAdd /></PrivateRoute>} />
-            <Route path="/menu-edit/:id" element={<PrivateRoute><MenuAdd /></PrivateRoute>} />
-            <Route path="/menu-consumption" element={<PrivateRoute><MenuConsumption /></PrivateRoute>} />
-            <Route path="/menu-consumption-undo" element={<PrivateRoute><MenuConsumptionUndo /></PrivateRoute>} />
-            
-            {/* Etkinlik kayıtları sayfası */}
-            <Route path="/activities" element={<PrivateRoute><Activities /></PrivateRoute>} />
-            <Route path="/activity-log" element={<PrivateRoute><ActivityLog /></PrivateRoute>} />
-            
-            {/* Gider sayfaları */}
-            <Route path="/expense-add" element={<PrivateRoute><ExpenseAdd /></PrivateRoute>} />
-            <Route path="/expense-list" element={<PrivateRoute><ExpenseList /></PrivateRoute>} />
-            
-            {/* Personel sayfaları */}
-            <Route path="/personnel-list" element={<PrivateRoute><PersonnelList /></PrivateRoute>} />
-            <Route path="/personnel-timesheet" element={<PrivateRoute><PersonnelTimesheet /></PrivateRoute>} />
-          </Routes>
-        </ProjectProvider>
-      </Router>
-    </ThemeProvider>
+    <ErrorBoundary>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <Router>
+          <ProjectProvider>
+            <Routes>
+              <Route path="/" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+              <Route path="/auth/callback" element={<AuthCallback />} />
+              <Route path="/projects" element={<PrivateRoute requireProject={false}><ProjectSelection /></PrivateRoute>} />
+              <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+              <Route path="/products" element={<PrivateRoute><Products /></PrivateRoute>} />
+              <Route path="/stock-movements" element={<PrivateRoute><StockMovements /></PrivateRoute>} />
+              <Route path="/bulk-stock-out" element={<PrivateRoute><BulkStockOut /></PrivateRoute>} />
+              <Route path="/categories" element={<PrivateRoute><Categories /></PrivateRoute>} />
+              <Route path="/personnel-add" element={<PrivateRoute><PersonnelAdd /></PrivateRoute>} />
+              <Route path="/personnel-edit/:id" element={<PrivateRoute><PersonnelAdd /></PrivateRoute>} />
+              <Route path="/personnel-timesheet/:id" element={<PrivateRoute><PersonnelTimesheet /></PrivateRoute>} />
+              <Route path="/product-templates" element={<PrivateRoute><ProductTemplates /></PrivateRoute>} />
+              <Route path="/recipes" element={<PrivateRoute><Recipes /></PrivateRoute>} />
+              <Route path="/recipe-add" element={<PrivateRoute><RecipeAdd /></PrivateRoute>} />
+              <Route path="/recipe-edit/:id" element={<PrivateRoute><RecipeAdd /></PrivateRoute>} />
+              <Route path="/menus" element={<PrivateRoute><Menus /></PrivateRoute>} />
+              <Route path="/menu-add" element={<PrivateRoute><MenuAdd /></PrivateRoute>} />
+              <Route path="/menu-edit/:id" element={<PrivateRoute><MenuAdd /></PrivateRoute>} />
+              <Route path="/menu-consumption" element={<PrivateRoute><MenuConsumption /></PrivateRoute>} />
+              <Route path="/menu-consumption-undo" element={<PrivateRoute><MenuConsumptionUndo /></PrivateRoute>} />
+
+              {/* Etkinlik kayıtları sayfası */}
+              <Route path="/activities" element={<PrivateRoute><Activities /></PrivateRoute>} />
+              <Route path="/activity-log" element={<PrivateRoute><ActivityLog /></PrivateRoute>} />
+
+              {/* Gider sayfaları */}
+              <Route path="/expense-add" element={<PrivateRoute><ExpenseAdd /></PrivateRoute>} />
+              <Route path="/expense-list" element={<PrivateRoute><ExpenseList /></PrivateRoute>} />
+
+              {/* Personel sayfaları */}
+              <Route path="/personnel-list" element={<PrivateRoute><PersonnelList /></PrivateRoute>} />
+              <Route path="/personnel-timesheet" element={<PrivateRoute><PersonnelTimesheet /></PrivateRoute>} />
+            </Routes>
+          </ProjectProvider>
+        </Router>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 }
 

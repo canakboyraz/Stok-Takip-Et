@@ -29,12 +29,13 @@ import {
   Search as SearchIcon,
   Clear as ClearIcon
 } from '@mui/icons-material';
-import { supabase } from '../lib/supabase';
-import { Expense } from '../types/database';
 import { format, parseISO } from 'date-fns';
+import { logger } from '../utils/logger';
+import { ExpenseService, Expense } from '../services/expenseService';
+import { useErrorHandler } from '../hooks/useErrorHandler';
 
 const ExpenseList = () => {
-  // State değişkenleri
+  // State variables
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
   const [startDate, setStartDate] = useState<string>('');
@@ -43,202 +44,150 @@ const ExpenseList = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [totalAmount, setTotalAmount] = useState<number>(0);
   const [searchTerm, setSearchTerm] = useState('');
-  const [alert, setAlert] = useState<{show: boolean, message: string, type: 'success' | 'error'}>({
-    show: false,
-    message: '',
-    type: 'success'
-  });
-  
-  // Form state'leri
-  const [expenseName, setExpenseName] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+
+  const { error, showError, clearError } = useErrorHandler();
+
+  // Form states
+  const [expenseCategory, setExpenseCategory] = useState('');
   const [expenseAmount, setExpenseAmount] = useState<number | ''>('');
   const [expenseDate, setExpenseDate] = useState<string>('');
-  const [expenseNotes, setExpenseNotes] = useState('');
-  
+  const [expenseDescription, setExpenseDescription] = useState('');
+
   const fetchExpenses = useCallback(async (start?: string | null, end?: string | null) => {
     try {
       setLoading(true);
-      
+
       const currentProjectId = localStorage.getItem('currentProjectId');
       if (!currentProjectId) {
-        throw new Error('Proje ID bulunamadı');
+        showError('Proje ID bulunamadı. Lütfen proje seçin.');
+        return;
       }
-      
-      let query = supabase
-        .from('expenses')
-        .select('*')
-        .eq('project_id', currentProjectId)
-        .order('date', { ascending: false });
-      
-      // Tarih filtresi ekle
-      if (start && start.trim() !== '') {
-        const startStr = new Date(start).toISOString().split('T')[0];
-        query = query.gte('date', startStr);
-      }
-      
-      if (end && end.trim() !== '') {
-        const endDate = new Date(end);
-        endDate.setHours(23, 59, 59, 999);
-        const endStr = endDate.toISOString();
-        query = query.lte('date', endStr);
-      }
-      
-      const { data, error } = await query;
-      
-      if (error) throw error;
-      
-      // Verileri state'e kaydet
-      if (data) {
-        // Arama terimini uygula (client-side filtering)
-        let filteredData = data;
-        
-        if (searchTerm && searchTerm.trim() !== '') {
-          const term = searchTerm.toLowerCase().trim();
-          filteredData = data.filter(expense => 
-            (expense.name && expense.name.toLowerCase().includes(term)) || 
-            (expense.notes && expense.notes.toLowerCase().includes(term))
-          );
-        }
-        
-        setExpenses(filteredData);
-        
-        // Toplam tutarı hesapla
-        const total = filteredData.reduce((sum, expense) => sum + expense.amount, 0);
-        setTotalAmount(total);
-      }
-    } catch (error: any) {
-      console.error('Gider listesi alınırken hata:', error);
-      setAlert({
-        show: true,
-        message: `Giderler yüklenirken hata oluştu: ${error.message}`,
-        type: 'error'
+
+      const data = await ExpenseService.getAll({
+        projectId: parseInt(currentProjectId),
+        startDate: start && start.trim() !== '' ? start : undefined,
+        endDate: end && end.trim() !== '' ? end : undefined,
       });
+
+      // Apply search term (client-side filtering)
+      let filteredData = data;
+
+      if (searchTerm && searchTerm.trim() !== '') {
+        const term = searchTerm.toLowerCase().trim();
+        filteredData = data.filter(expense =>
+          (expense.category && expense.category.toLowerCase().includes(term)) ||
+          (expense.description && expense.description.toLowerCase().includes(term))
+        );
+      }
+
+      setExpenses(filteredData);
+
+      // Calculate total amount
+      const total = filteredData.reduce((sum, expense) => sum + expense.amount, 0);
+      setTotalAmount(total);
+
+    } catch (err) {
+      showError(err);
     } finally {
       setLoading(false);
     }
-  }, [searchTerm]);
-  
+  }, [searchTerm, showError]);
+
   useEffect(() => {
     fetchExpenses();
   }, [fetchExpenses]);
-  
+
   const handleFilter = () => {
     fetchExpenses(startDate, endDate);
   };
-  
+
   const handleClearFilter = () => {
     setStartDate('');
     setEndDate('');
     setSearchTerm('');
     fetchExpenses();
   };
-  
+
   const handleEditClick = (expense: Expense) => {
     setEditExpense(expense);
-    setExpenseName(expense.name);
+    setExpenseCategory(expense.category);
     setExpenseAmount(expense.amount);
     setExpenseDate(expense.date ? expense.date.split('T')[0] : '');
-    setExpenseNotes(expense.notes || '');
+    setExpenseDescription(expense.description || '');
     setOpenDialog(true);
   };
-  
+
   const handleCloseDialog = () => {
     setOpenDialog(false);
     setEditExpense(null);
+    clearError();
   };
-  
+
   const handleSaveEdit = async () => {
     if (!editExpense) return;
-    
+
     try {
       setLoading(true);
-      
-      // Form doğrulama
-      if (!expenseName.trim() || !expenseAmount || !expenseDate) {
-        setAlert({
-          show: true,
-          message: 'Lütfen gerekli alanları doldurun',
-          type: 'error'
-        });
+
+      // Form validation
+      if (!expenseCategory.trim() || !expenseAmount || !expenseDate) {
+        showError('Lütfen gerekli alanları doldurun (Kategori, Tutar, Tarih)');
         return;
       }
-      
-      // Formatlanmış tarih
-      const formattedDate = new Date(expenseDate).toISOString();
-      
-      // Güncelleme işlemi
-      const { data, error } = await supabase
-        .from('expenses')
-        .update({
-          name: expenseName.trim(),
-          amount: Number(expenseAmount),
-          date: formattedDate,
-          notes: expenseNotes.trim() || null,
-        })
-        .eq('id', editExpense.id)
-        .select();
-      
-      if (error) throw error;
-      
-      // Başarılı güncelleme
-      setAlert({
-        show: true,
-        message: 'Gider başarıyla güncellendi',
-        type: 'success'
+
+      if (Number(expenseAmount) <= 0) {
+        showError('Tutar sıfırdan büyük olmalıdır');
+        return;
+      }
+
+      // Update operation
+      await ExpenseService.update({
+        id: editExpense.id,
+        category: expenseCategory.trim(),
+        amount: Number(expenseAmount),
+        date: expenseDate,
+        description: expenseDescription.trim() || undefined,
       });
-      
-      // Listeyi güncelle
+
+      // Success
+      setSuccessMessage('Gider başarıyla güncellendi');
       handleCloseDialog();
       fetchExpenses(startDate, endDate);
-      
-    } catch (error: any) {
-      console.error('Gider güncelleme hatası:', error);
-      setAlert({
-        show: true,
-        message: `Gider güncellenirken hata oluştu: ${error.message}`,
-        type: 'error'
-      });
+
+    } catch (err) {
+      showError(err);
     } finally {
       setLoading(false);
     }
   };
-  
+
   const handleDeleteExpense = async (id: number) => {
     if (!window.confirm('Bu gideri silmek istediğinizden emin misiniz?')) return;
-    
+
     try {
       setLoading(true);
-      
-      const { error } = await supabase
-        .from('expenses')
-        .delete()
-        .eq('id', id);
-      
-      if (error) throw error;
-      
-      // Başarılı silme
-      setAlert({
-        show: true,
-        message: 'Gider başarıyla silindi',
-        type: 'success'
-      });
-      
-      // Listeyi güncelle
+
+      const currentProjectId = localStorage.getItem('currentProjectId');
+      if (!currentProjectId) {
+        showError('Proje ID bulunamadı');
+        return;
+      }
+
+      await ExpenseService.delete(id, parseInt(currentProjectId));
+
+      // Success
+      setSuccessMessage('Gider başarıyla silindi');
       fetchExpenses(startDate, endDate);
-      
-    } catch (error: any) {
-      console.error('Gider silme hatası:', error);
-      setAlert({
-        show: true,
-        message: `Gider silinirken hata oluştu: ${error.message}`,
-        type: 'error'
-      });
+
+    } catch (err) {
+      showError(err);
     } finally {
       setLoading(false);
     }
   };
-  
-  // Tarih formatını düzenleyen yardımcı fonksiyon
+
+  // Helper function to format date
   const formatDate = (dateString: string) => {
     try {
       return format(parseISO(dateString), 'dd.MM.yyyy');
@@ -246,8 +195,8 @@ const ExpenseList = () => {
       return 'Geçersiz tarih';
     }
   };
-  
-  // Para birimini formatlayan yardımcı fonksiyon
+
+  // Helper function to format currency
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('tr-TR', {
       style: 'currency',
@@ -255,15 +204,21 @@ const ExpenseList = () => {
       minimumFractionDigits: 2
     }).format(amount);
   };
-  
+
   return (
     <Container maxWidth="lg">
       <Paper elevation={3} sx={{ p: 3, mt: 2 }}>
         <Typography variant="h5" component="h1" gutterBottom>
           Gider Listesi
         </Typography>
-        
-        {/* Filtre bölümü */}
+
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }} onClose={clearError}>
+            {error.message}
+          </Alert>
+        )}
+
+        {/* Filter section */}
         <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
           <Grid container spacing={3} alignItems="center">
             <Grid item xs={12} sm={4}>
@@ -279,7 +234,7 @@ const ExpenseList = () => {
                 }}
               />
             </Grid>
-            
+
             <Grid item xs={12} sm={4}>
               <TextField
                 fullWidth
@@ -293,7 +248,7 @@ const ExpenseList = () => {
                 }}
               />
             </Grid>
-            
+
             <Grid item xs={12} sm={4}>
               <Box display="flex" gap={1}>
                 <Button
@@ -318,11 +273,11 @@ const ExpenseList = () => {
             <Grid item xs={12}>
               <TextField
                 fullWidth
-                label="Gider Adı veya Not Ara"
+                label="Kategori veya Açıklama Ara"
                 value={searchTerm}
                 onChange={(e) => {
                   setSearchTerm(e.target.value);
-                  // İsim araması anlık olarak uygulanabilir (tarih arama için butona basma gerekiyor)
+                  // Search is applied instantly with debounce
                   setTimeout(() => fetchExpenses(startDate, endDate), 300);
                 }}
                 margin="normal"
@@ -340,8 +295,8 @@ const ExpenseList = () => {
             </Grid>
           </Grid>
         </Paper>
-        
-        {/* Toplam tutar kısmı */}
+
+        {/* Total amount section */}
         <Box sx={{ mb: 3, p: 2, bgcolor: 'primary.light', color: 'white', borderRadius: 1 }}>
           <Typography variant="h6">
             Toplam Gider: {formatCurrency(totalAmount)}
@@ -357,8 +312,8 @@ const ExpenseList = () => {
             {searchTerm && ` | Arama: "${searchTerm}"`}
           </Typography>
         </Box>
-        
-        {/* Gider tablosu */}
+
+        {/* Expense table */}
         {loading ? (
           <Box display="flex" justifyContent="center" p={4}>
             <CircularProgress />
@@ -373,9 +328,9 @@ const ExpenseList = () => {
               <TableHead>
                 <TableRow sx={{ bgcolor: 'background.lightgrey' }}>
                   <TableCell>Tarih</TableCell>
-                  <TableCell>Gider Adı</TableCell>
+                  <TableCell>Kategori</TableCell>
                   <TableCell>Tutar</TableCell>
-                  <TableCell>Notlar</TableCell>
+                  <TableCell>Açıklama</TableCell>
                   <TableCell align="right">İşlemler</TableCell>
                 </TableRow>
               </TableHead>
@@ -383,9 +338,9 @@ const ExpenseList = () => {
                 {expenses.map((expense) => (
                   <TableRow key={expense.id}>
                     <TableCell>{formatDate(expense.date)}</TableCell>
-                    <TableCell>{expense.name}</TableCell>
+                    <TableCell>{expense.category}</TableCell>
                     <TableCell>{formatCurrency(expense.amount)}</TableCell>
-                    <TableCell>{expense.notes || '-'}</TableCell>
+                    <TableCell>{expense.description || '-'}</TableCell>
                     <TableCell align="right">
                       <Tooltip title="Düzenle">
                         <IconButton onClick={() => handleEditClick(expense)} size="small">
@@ -393,9 +348,9 @@ const ExpenseList = () => {
                         </IconButton>
                       </Tooltip>
                       <Tooltip title="Sil">
-                        <IconButton 
-                          onClick={() => handleDeleteExpense(expense.id)} 
-                          size="small" 
+                        <IconButton
+                          onClick={() => handleDeleteExpense(expense.id)}
+                          size="small"
                           color="error"
                         >
                           <DeleteIcon />
@@ -409,8 +364,8 @@ const ExpenseList = () => {
           </TableContainer>
         )}
       </Paper>
-      
-      {/* Düzenleme Diyaloğu */}
+
+      {/* Edit Dialog */}
       <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
         <DialogTitle>Gider Düzenle</DialogTitle>
         <DialogContent>
@@ -418,14 +373,14 @@ const ExpenseList = () => {
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Gider Adı"
-                value={expenseName}
-                onChange={(e) => setExpenseName(e.target.value)}
+                label="Kategori"
+                value={expenseCategory}
+                onChange={(e) => setExpenseCategory(e.target.value)}
                 margin="normal"
                 required
               />
             </Grid>
-            
+
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
@@ -440,7 +395,7 @@ const ExpenseList = () => {
                 }}
               />
             </Grid>
-            
+
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
@@ -455,15 +410,15 @@ const ExpenseList = () => {
                 }}
               />
             </Grid>
-            
+
             <Grid item xs={12}>
               <TextField
                 fullWidth
-                label="Notlar"
+                label="Açıklama"
                 multiline
                 rows={3}
-                value={expenseNotes}
-                onChange={(e) => setExpenseNotes(e.target.value)}
+                value={expenseDescription}
+                onChange={(e) => setExpenseDescription(e.target.value)}
                 margin="normal"
               />
             </Grid>
@@ -476,23 +431,20 @@ const ExpenseList = () => {
           </Button>
         </DialogActions>
       </Dialog>
-      
-      {/* Bilgilendirme Snackbar */}
+
+      {/* Success Snackbar */}
       <Snackbar
-        open={alert.show}
-        autoHideDuration={6000}
-        onClose={() => setAlert({ ...alert, show: false })}
+        open={!!successMessage}
+        autoHideDuration={3000}
+        onClose={() => setSuccessMessage('')}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert
-          onClose={() => setAlert({ ...alert, show: false })}
-          severity={alert.type}
-          sx={{ width: '100%' }}
-        >
-          {alert.message}
+        <Alert severity="success" onClose={() => setSuccessMessage('')}>
+          {successMessage}
         </Alert>
       </Snackbar>
     </Container>
   );
 };
 
-export default ExpenseList; 
+export default ExpenseList;

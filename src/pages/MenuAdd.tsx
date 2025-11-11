@@ -38,6 +38,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { Recipe, Menu } from '../types/database';
 import { alpha } from '@mui/material/styles';
+import { logger } from '../utils/logger';
 // import { enqueueSnackbar } from 'notistack';
 
 // Extend the Menu interface to include price_per_person
@@ -199,7 +200,7 @@ const MenuAdd: React.FC = () => {
         }
       }
     } catch (error: any) {
-      console.error('Menü bilgileri alınırken hata:', error);
+      logger.error('Menü bilgileri alınırken hata:', error);
       setAlert({
         show: true,
         message: `Menü bilgileri yüklenirken hata oluştu: ${error.message}`,
@@ -225,7 +226,7 @@ const MenuAdd: React.FC = () => {
         return;
       }
       
-      console.log('Fetching recipes for project ID:', projectId);
+      logger.log('Fetching recipes for project ID:', projectId);
       
       const { data, error } = await supabase
         .from('recipes')
@@ -235,7 +236,7 @@ const MenuAdd: React.FC = () => {
       
       if (error) throw error;
       
-      console.log('Fetched recipes:', data?.length || 0);
+      logger.log('Fetched recipes:', data?.length || 0);
       
       // Transform regular recipes to SelectedRecipe type with selected=false
       const recipesWithSelection = data?.map(recipe => ({
@@ -247,7 +248,7 @@ const MenuAdd: React.FC = () => {
       setRecipes(data || []);
       setSelectedRecipes(recipesWithSelection);
     } catch (error: any) {
-      console.error('Tarifler alınırken hata:', error);
+      logger.error('Tarifler alınırken hata:', error);
       setAlert({
         show: true,
         message: `Tarifler yüklenirken hata oluştu: ${error.message}`,
@@ -287,7 +288,7 @@ const MenuAdd: React.FC = () => {
       name: newName
     });
     
-    console.log('Menü adı otomatik oluşturuldu:', newName);
+    logger.log('Menü adı otomatik oluşturuldu:', newName);
   };
 
   const handleRecipeSelectChange = (e: SelectChangeEvent<number | string>) => {
@@ -387,7 +388,7 @@ const MenuAdd: React.FC = () => {
           .single();
           
         if (updateError) {
-          console.error('Error updating menu:', updateError);
+          logger.error('Error updating menu:', updateError);
           setAlert({
             show: true,
             message: 'Menü güncellenirken bir hata oluştu',
@@ -406,7 +407,7 @@ const MenuAdd: React.FC = () => {
           .eq('menu_id', menuId);
           
         if (deleteError) {
-          console.error('Error deleting menu recipes:', deleteError);
+          logger.error('Error deleting menu recipes:', deleteError);
           setAlert({
             show: true,
             message: 'Menü tarifleri güncellenirken bir hata oluştu',
@@ -434,7 +435,7 @@ const MenuAdd: React.FC = () => {
           .single();
           
         if (menuError) {
-          console.error('Error inserting menu:', menuError);
+          logger.error('Error inserting menu:', menuError);
           setAlert({
             show: true,
             message: 'Menü kaydedilirken bir hata oluştu',
@@ -460,7 +461,7 @@ const MenuAdd: React.FC = () => {
         .insert(menuRecipesData);
         
       if (menuRecipesError) {
-        console.error('Error inserting menu recipes:', menuRecipesError);
+        logger.error('Error inserting menu recipes:', menuRecipesError);
         setAlert({
           show: true,
           message: 'Menü tarifleri kaydedilirken bir hata oluştu',
@@ -477,7 +478,7 @@ const MenuAdd: React.FC = () => {
       });
       navigate('/menus');
     } catch (error) {
-      console.error('Error saving menu:', error instanceof Error ? error.message : String(error));
+      logger.error('Error saving menu:', error instanceof Error ? error.message : String(error));
       setAlert({
         show: true,
         message: 'Menü kaydedilirken bir hata oluştu',

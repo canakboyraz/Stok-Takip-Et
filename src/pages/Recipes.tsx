@@ -25,6 +25,7 @@ import {
 import { supabase } from '../lib/supabase';
 import { Recipe } from '../types/database';
 import { useNavigate } from 'react-router-dom';
+import { logger } from '../utils/logger';
 
 const Recipes = () => {
   const navigate = useNavigate();
@@ -109,7 +110,7 @@ const Recipes = () => {
       setRecipes(data || []);
       
     } catch (error: any) {
-      console.error('Tarif listesi alınırken hata:', error);
+      logger.error('Tarif listesi alınırken hata:', error);
       setAlert({
         show: true,
         message: `Tarifler yüklenirken hata oluştu: ${error.message}`,
@@ -194,7 +195,7 @@ const Recipes = () => {
       });
       
     } catch (error: any) {
-      console.error('Tariflerin maliyetleri hesaplanırken hata:', error);
+      logger.error('Tariflerin maliyetleri hesaplanırken hata:', error);
       setAlert({
         show: true,
         message: `Tariflerin maliyetleri hesaplanırken hata: ${error.message}`,
@@ -255,7 +256,7 @@ const Recipes = () => {
           .eq('recipe_id', recipeId);
           
         if (ingredientError) {
-          console.error('Malzemeler silinirken hata:', ingredientError);
+          logger.error('Malzemeler silinirken hata:', ingredientError);
           setAlert({
             show: true,
             message: 'Malzemeler silinirken bir hata oluştu.',
@@ -271,7 +272,7 @@ const Recipes = () => {
           .eq('id', recipeId);
           
         if (error) {
-          console.error('Tarif silinirken hata:', error);
+          logger.error('Tarif silinirken hata:', error);
           setAlert({
             show: true,
             message: 'Tarif silinirken bir hata oluştu.',
@@ -290,7 +291,7 @@ const Recipes = () => {
         // Tarif listesini güncelle
         fetchRecipes();
       } catch (error) {
-        console.error('Tarif silme hatası:', error);
+        logger.error('Tarif silme hatası:', error);
         setAlert({
           show: true,
           message: 'Tarif silinirken bir hata oluştu.',

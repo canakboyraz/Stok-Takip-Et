@@ -12,6 +12,7 @@ import {
   CircularProgress
 } from '@mui/material';
 import { supabase } from '../lib/supabase';
+import { logger } from '../utils/logger';
 
 const Signup = () => {
   const [email, setEmail] = useState('');
@@ -66,7 +67,7 @@ const Signup = () => {
       if (error) throw error;
 
       if (data && data.user) {
-        console.log('Kullanıcı kaydedildi:', data.user);
+        logger.log('Kullanıcı kaydedildi:', data.user);
         setSuccess('Hesabınız başarıyla oluşturuldu! Şu an giriş yapabilirsiniz.');
         
         // Kullanıcı başarıyla kaydedildi, giriş sayfasına yönlendir
@@ -75,7 +76,7 @@ const Signup = () => {
         }, 3000);
       }
     } catch (error: any) {
-      console.error('Kayıt hatası:', error);
+      logger.error('Kayıt hatası:', error);
       setError(error.message || 'Kayıt sırasında bir hata oluştu');
     } finally {
       setLoading(false);

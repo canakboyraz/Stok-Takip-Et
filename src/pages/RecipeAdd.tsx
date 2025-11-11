@@ -25,6 +25,7 @@ import { Delete as DeleteIcon, ArrowBack as ArrowBackIcon, Save as SaveIcon } fr
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { Product } from '../types/database';
+import { logger } from '../utils/logger';
 
 interface Ingredient {
   product_id: number;
@@ -145,7 +146,7 @@ const RecipeAdd = () => {
       }
       
     } catch (error: any) {
-      console.error('Ürünler yüklenirken hata:', error);
+      logger.error('Ürünler yüklenirken hata:', error);
       setAlert({
         show: true,
         message: `Ürünler yüklenirken hata oluştu: ${error.message}`,
@@ -159,7 +160,7 @@ const RecipeAdd = () => {
   // Fetch recipe data for edit mode - Tamamen yeniden yazıldı
   const fetchRecipe = useCallback(async () => {
     if (!isEditMode || !id || recipeLoadedRef.current || currentRecipeIdRef.current === id) {
-      console.log('fetchRecipe atlandı - koşullar:', { 
+      logger.log('fetchRecipe atlandı - koşullar:', { 
         isEditMode, 
         id, 
         recipeLoadedRef: recipeLoadedRef.current,
@@ -168,7 +169,7 @@ const RecipeAdd = () => {
       return;
     }
     
-    console.log('fetchRecipe başlatılıyor, ID:', id);
+    logger.log('fetchRecipe başlatılıyor, ID:', id);
     
     try {
       setLoading(true);
@@ -219,7 +220,7 @@ const RecipeAdd = () => {
           price: item.products?.price || 0
         }));
         
-        console.log('Tarif malzemeleri yüklendi:', formattedIngredients.length, 'adet');
+        logger.log('Tarif malzemeleri yüklendi:', formattedIngredients.length, 'adet');
         
         // DUPLICATE PRODUCT_ID'LERİ MERGE ET - QUANTITY'LERİ TOPLA
         const mergedIngredients = new Map<number, Ingredient>();
@@ -230,7 +231,7 @@ const RecipeAdd = () => {
           if (existingIngredient) {
             // Aynı ürün varsa, miktarları topla
             existingIngredient.quantity += ingredient.quantity;
-            console.log(`Duplicate malzeme birleştirildi: ${ingredient.product_name}, toplam miktar: ${existingIngredient.quantity}`);
+            logger.log(`Duplicate malzeme birleştirildi: ${ingredient.product_name}, toplam miktar: ${existingIngredient.quantity}`);
           } else {
             // Yeni ürün, direkt ekle
             mergedIngredients.set(ingredient.product_id, { ...ingredient });
@@ -238,19 +239,19 @@ const RecipeAdd = () => {
         });
         
         const finalIngredients = Array.from(mergedIngredients.values());
-        console.log('Birleştirilmiş malzemeler:', finalIngredients.length, 'adet');
+        logger.log('Birleştirilmiş malzemeler:', finalIngredients.length, 'adet');
         
         // State'i direkt set et - setTimeout gereksiz
         setIngredients(finalIngredients);
       } else {
-        console.log('Tarif için malzeme bulunamadı');
+        logger.log('Tarif için malzeme bulunamadı');
         setIngredients([]);
       }
       
-      console.log('Tarif başarıyla yüklendi');
+      logger.log('Tarif başarıyla yüklendi');
       
     } catch (error: any) {
-      console.error('Tarif yüklenirken hata:', error);
+      logger.error('Tarif yüklenirken hata:', error);
       recipeLoadedRef.current = false; // Hata durumunda tekrar deneyebilsin
       currentRecipeIdRef.current = undefined;
       setAlert({
@@ -265,13 +266,13 @@ const RecipeAdd = () => {
 
   // Effects - Daha stabil yaklaşım
   useEffect(() => {
-    console.log('RecipeAdd component mounting, fetching products...');
+    logger.log('RecipeAdd component mounting, fetching products...');
     fetchProducts();
   }, []); // fetchProducts dependency'sini kaldırdık
 
   // ID değiştiğinde state'leri sıfırla - sadece ID gerçekten değiştiğinde
   useEffect(() => {
-    console.log('Recipe ID değişti, state sıfırlanıyor:', id);
+    logger.log('Recipe ID değişti, state sıfırlanıyor:', id);
     recipeLoadedRef.current = false;
     currentRecipeIdRef.current = undefined;
     setIngredients([]);
@@ -289,7 +290,7 @@ const RecipeAdd = () => {
   // Edit mode için tarif yükleme - sadece gerekli koşullarda
   useEffect(() => {
     if (isEditMode && id && !productsLoading && !recipeLoadedRef.current) {
-      console.log('Tarif yükleme koşulları sağlandı, fetchRecipe çağrılıyor');
+      logger.log('Tarif yükleme koşulları sağlandı, fetchRecipe çağrılıyor');
       fetchRecipe();
     }
   }, [isEditMode, id, productsLoading, fetchRecipe]);
@@ -323,7 +324,7 @@ const RecipeAdd = () => {
     // Check if product already exists
     const existingIngredientIndex = ingredients.findIndex(ing => ing.product_id === selectedProduct.id);
     if (existingIngredientIndex !== -1) {
-      console.log('Ürün zaten mevcut:', selectedProduct.name);
+      logger.log('Ürün zaten mevcut:', selectedProduct.name);
       
       // Mevcut malzemenin miktarını artır
       setIngredients(prev => prev.map((ingredient, index) => 
@@ -362,7 +363,7 @@ const RecipeAdd = () => {
   };
 
   const cleanDuplicateIngredients = () => {
-    console.log('Duplicate malzemeler temizleniyor...');
+    logger.log('Duplicate malzemeler temizleniyor...');
     
     setIngredients(prev => {
       const uniqueIngredients = prev.reduce((acc: Ingredient[], current) => {
@@ -372,12 +373,12 @@ const RecipeAdd = () => {
         } else {
           // Eğer aynı ürün varsa, miktarları topla
           acc[existingIndex].quantity += current.quantity;
-          console.log(`Duplicate malzeme birleştirildi: ${current.product_name}, toplam miktar: ${acc[existingIndex].quantity}`);
+          logger.log(`Duplicate malzeme birleştirildi: ${current.product_name}, toplam miktar: ${acc[existingIndex].quantity}`);
         }
         return acc;
       }, []);
       
-      console.log('Temizleme öncesi:', prev.length, 'sonrası:', uniqueIngredients.length);
+      logger.log('Temizleme öncesi:', prev.length, 'sonrası:', uniqueIngredients.length);
       return uniqueIngredients;
     });
     
@@ -389,11 +390,11 @@ const RecipeAdd = () => {
   };
 
   const removeIngredientByProductId = (productId: number, productName: string) => {
-    console.log('Malzeme siliniyor, product_id:', productId, 'Mevcut malzemeler:', ingredients.length);
+    logger.log('Malzeme siliniyor, product_id:', productId, 'Mevcut malzemeler:', ingredients.length);
     
     setIngredients(prev => {
       const newIngredients = prev.filter(ingredient => ingredient.product_id !== productId);
-      console.log('Silme sonrası malzeme sayısı:', newIngredients.length);
+      logger.log('Silme sonrası malzeme sayısı:', newIngredients.length);
       return newIngredients;
     });
     
@@ -405,10 +406,10 @@ const RecipeAdd = () => {
   };
 
   const removeIngredient = (index: number) => {
-    console.log('Malzeme siliniyor, index:', index, 'Mevcut malzemeler:', ingredients.length);
+    logger.log('Malzeme siliniyor, index:', index, 'Mevcut malzemeler:', ingredients.length);
     
     if (index < 0 || index >= ingredients.length) {
-      console.error('Geçersiz index:', index);
+      logger.error('Geçersiz index:', index);
       setAlert({
         show: true,
         message: 'Malzeme silinirken hata oluştu',
@@ -418,7 +419,7 @@ const RecipeAdd = () => {
     }
     
     const ingredientToRemove = ingredients[index];
-    console.log('Silinecek malzeme:', ingredientToRemove);
+    logger.log('Silinecek malzeme:', ingredientToRemove);
     
     // Product ID ile silme işlemini yap
     removeIngredientByProductId(ingredientToRemove.product_id, ingredientToRemove.product_name);
@@ -604,7 +605,7 @@ const RecipeAdd = () => {
         navigate('/recipes');
       }, 1500);
     } catch (error: any) {
-      console.error('Tarif kaydedilirken hata:', error);
+      logger.error('Tarif kaydedilirken hata:', error);
       setAlert({
         show: true,
         message: `Tarif kaydedilirken hata oluştu: ${error.message}`,

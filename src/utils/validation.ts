@@ -28,7 +28,7 @@ export const isValidStock = (stock: number): boolean => {
 };
 
 // Required field validation
-export const isRequired = (value: any): boolean => {
+export const isRequired = (value: unknown): boolean => {
   if (typeof value === 'string') {
     return value.trim().length > 0;
   }

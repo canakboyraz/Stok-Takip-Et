@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { logger } from '../utils/logger';
 
 export type ActivityType = 
   // Stok işlemleri
@@ -82,36 +83,36 @@ export const logActivity = async (
   entityId: number | null = null
 ): Promise<boolean> => {
   try {
-    console.group('🔍 Activity Logger');
-    console.log('📝 logActivity called:', { activityType, description, entityType, entityId });
-    
+    logger.group('🔍 Activity Logger');
+    logger.log('📝 logActivity called:', { activityType, description, entityType, entityId });
+
     // Mevcut kullanıcı bilgisini al
-    console.log('👤 Fetching current user...');
+    logger.log('👤 Fetching current user...');
     const { data: userData, error: userError } = await supabase.auth.getUser();
-    
+
     if (userError) {
-      console.error('❌ Error getting user:', userError);
-      console.groupEnd();
+      logger.error('❌ Error getting user:', userError);
+      logger.groupEnd();
       return false;
     }
-    
+
     if (!userData || !userData.user) {
-      console.error('❌ Etkinlik kaydı eklenemiyor: Kullanıcı bulunamadı');
-      console.groupEnd();
+      logger.error('❌ Etkinlik kaydı eklenemiyor: Kullanıcı bulunamadı');
+      logger.groupEnd();
       return false;
     }
-    
-    console.log('✅ User found:', userData.user.email);
+
+    logger.log('✅ User found:', userData.user.email);
 
     // Mevcut proje ID'sini al
-    console.log('🏢 Getting current project ID...');
+    logger.log('🏢 Getting current project ID...');
     const projectId = localStorage.getItem('currentProjectId');
     if (!projectId) {
-      console.error('❌ Etkinlik kaydı eklenemiyor: Proje ID bulunamadı');
-      console.groupEnd();
+      logger.error('❌ Etkinlik kaydı eklenemiyor: Proje ID bulunamadı');
+      logger.groupEnd();
       return false;
     }
-    console.log('✅ Project ID:', projectId);
+    logger.log('✅ Project ID:', projectId);
 
     // IP adresini al (production ortamında değiştirilmeli)
     const ipAddress = '127.0.0.1'; // Geliştirme için varsayılan değer
@@ -128,29 +129,29 @@ export const logActivity = async (
       ip_address: ipAddress
     };
 
-    console.log('📋 Activity data to be inserted:', activityData);
-    console.log('📋 Activity data JSON:', JSON.stringify(activityData, null, 2));
-    
+    logger.log('📋 Activity data to be inserted:', activityData);
+    logger.debug('📋 Activity data JSON:', JSON.stringify(activityData, null, 2));
+
     // Etkinlik kaydını ekle
-    console.log('💾 Inserting activity record...');
+    logger.log('💾 Inserting activity record...');
     const { data, error } = await supabase.from('activities').insert(activityData).select();
 
     if (error) {
-      console.error('❌ Error inserting activity record:', error);
-      console.error('❌ Error details:', JSON.stringify(error, null, 2));
-      console.error('❌ Error code:', error.code);
-      console.error('❌ Error message:', error.message);
-      console.error('❌ Error hint:', error.hint);
-      console.groupEnd();
+      logger.error('❌ Error inserting activity record:', error);
+      logger.debug('❌ Error details:', JSON.stringify(error, null, 2));
+      logger.error('❌ Error code:', error.code);
+      logger.error('❌ Error message:', error.message);
+      logger.debug('❌ Error hint:', error.hint);
+      logger.groupEnd();
       return false;
     }
 
-    console.log('✅ Activity record inserted successfully:', data);
-    console.groupEnd();
+    logger.log('✅ Activity record inserted successfully:', data);
+    logger.groupEnd();
     return true;
   } catch (error) {
-    console.error('❌ Unexpected error in logActivity:', error);
-    console.groupEnd();
+    logger.error('❌ Unexpected error in logActivity:', error);
+    logger.groupEnd();
     return false;
   }
 };

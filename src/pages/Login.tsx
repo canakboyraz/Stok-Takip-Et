@@ -9,6 +9,7 @@ import {
   Box,
 } from '@mui/material';
 import { supabase } from '../lib/supabase';
+import { logger } from '../utils/logger';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -41,14 +42,14 @@ const Login = () => {
 
       if (error) throw error;
 
-      console.log("Login successful:", data);
+      logger.log("Login successful:", data);
       
       if (data.user) {
-        console.log("Navigating to projects");
+        logger.log("Navigating to projects");
         navigate('/projects');
       }
     } catch (error: any) {
-      console.error("Login error:", error.message);
+      logger.error("Login error:", error.message);
       setError(error.message);
     } finally {
       setLoading(false);
