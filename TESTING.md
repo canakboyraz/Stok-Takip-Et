@@ -28,13 +28,27 @@ npm run test:watch
 src/
 ├── utils/
 │   ├── validation.ts
-│   └── validation.test.ts           # Utility testleri
+│   ├── validation.test.ts           # Utility testleri
+│   ├── errorHandler.ts
+│   └── errorHandler.test.ts         # Error handling testleri
 ├── lib/
 │   ├── activityLogger.ts
-│   └── activityLogger.test.ts       # Library testleri
+│   ├── activityLogger.test.ts       # Library testleri
+│   ├── formatHelpers.ts
+│   └── formatHelpers.test.ts        # Format helper testleri
+├── hooks/
+│   ├── useLocalStorage.ts
+│   └── useLocalStorage.test.ts      # Custom hook testleri
+├── pages/
+│   └── __tests__/
+│       ├── Login.test.tsx           # Login page testleri
+│       └── Categories.test.tsx      # Categories page testleri
 ├── components/
 │   └── __tests__/
-│       └── example.component.test.tsx  # Component testleri
+│       └── example.component.test.tsx  # Component test şablonu
+├── __tests__/
+│   └── integration/
+│       └── auth-flow.integration.test.tsx  # Integration testleri
 └── setupTests.ts                     # Test konfigürasyonu
 ```
 
@@ -79,14 +93,74 @@ Activity logging sistemini test eder:
 - ✅ Activity type labels
 - ✅ Entity type labels
 
+### ✅ Custom Hooks Testler
+
+#### 5. **useLocalStorage.test.ts** (~80 test case)
+LocalStorage hook'unu test eder:
+- ✅ Initial value handling
+- ✅ Different data types (string, number, object, array)
+- ✅ setValue function (direct and function updater)
+- ✅ removeValue function
+- ✅ Error handling (quota exceeded, etc.)
+- ✅ Multiple hook instances
+- ✅ Edge cases (empty strings, zero, false)
+- ✅ TypeScript type safety
+
+### ✅ Page Component Testler
+
+#### 6. **Login.test.tsx** (~100 test case)
+Login sayfası testleri:
+- ✅ Form rendering ve validation
+- ✅ Session check on mount
+- ✅ Form input handling
+- ✅ Successful login flow
+- ✅ Login error handling
+- ✅ Loading states
+- ✅ Sign up functionality
+- ✅ Network error recovery
+- ✅ Accessibility
+
+#### 7. **Categories.test.tsx** (~60 test case)
+Categories sayfası testleri:
+- ✅ Data fetching and display
+- ✅ Loading states
+- ✅ Add category dialog
+- ✅ Add category functionality
+- ✅ Edit category
+- ✅ Delete category
+- ✅ Error handling
+- ✅ Input validation (empty names)
+- ✅ Name formatting (capitalize)
+- ✅ Accessibility
+
+### ✅ Integration Testler
+
+#### 8. **auth-flow.integration.test.tsx** (~30 test case)
+Authentication flow integration testleri:
+- ✅ Complete login journey
+- ✅ Login failure and retry
+- ✅ Complete sign up flow
+- ✅ Session persistence
+- ✅ Error recovery
+- ✅ Auto-login with existing session
+
 ### 📚 Component Test Şablonu
 
-#### 5. **example.component.test.tsx**
+#### 9. **example.component.test.tsx**
 Component testleri için örnek şablon:
 - ✅ Button interaction testleri
 - ✅ Form handling testleri
 - ✅ Async operations testleri
 - ✅ Best practices ve örnekler
+
+## 📊 Test İstatistikleri
+
+**Toplam Test Case: ~545+**
+- Utility Tests: ~215
+- Library Tests: ~60
+- Custom Hooks: ~80
+- Page Components: ~160
+- Integration Tests: ~30
 
 ## Coverage Hedefleri
 
