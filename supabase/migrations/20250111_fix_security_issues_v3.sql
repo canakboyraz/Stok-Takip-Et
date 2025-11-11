@@ -1,4 +1,4 @@
--- Migration: Fix Critical Security Issues
+-- Migration: Fix Critical Security Issues (v3 - Correct table structure)
 -- Date: 2025-01-11
 -- Description: Fix auth_users_exposed and security_definer_view issues
 
@@ -9,32 +9,40 @@
 -- Drop existing view
 DROP VIEW IF EXISTS public.project_users_view CASCADE;
 
--- Recreate view WITHOUT exposing auth.users
--- Only expose necessary user information, not the full auth.users table
-CREATE OR REPLACE VIEW public.project_users_view AS
+-- Recreate view with security_invoker
+-- Note: Uses project_permissions table (NOT project_users!)
+-- Joins with auth.users to get emails, but with security_invoker it respects RLS
+CREATE OR REPLACE VIEW public.project_users_view
+  WITH (security_invoker = true) AS
 SELECT
-  pu.id,
-  pu.project_id,
-  pu.user_id,
-  pu.role,
-  pu.created_at,
-  -- Only expose safe user information (email from public field, not auth.users)
-  pu.user_email,
-  p.name as project_name
-FROM public.project_users pu
-LEFT JOIN public.projects p ON p.id = pu.project_id;
-
--- Set proper RLS policies instead of SECURITY DEFINER
-ALTER VIEW public.project_users_view OWNER TO postgres;
+  pp.id as permission_id,
+  pp.project_id,
+  p.name as project_name,
+  pp.user_id,
+  u.email as user_email,
+  pp.permission_level,
+  pp.granted_by,
+  g.email as granted_by_email,
+  pp.created_at
+FROM public.project_permissions pp
+JOIN public.projects p ON pp.project_id = p.id
+LEFT JOIN auth.users u ON pp.user_id = u.id::text
+LEFT JOIN auth.users g ON pp.granted_by = g.id::text;
 
 -- Enable RLS on the underlying table if not already enabled
-ALTER TABLE public.project_users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.project_permissions ENABLE ROW LEVEL SECURITY;
 
--- Add RLS policy for project_users table
-DROP POLICY IF EXISTS "Users can view their own project memberships" ON public.project_users;
-CREATE POLICY "Users can view their own project memberships"
-  ON public.project_users FOR SELECT
-  USING (auth.uid() = user_id);
+-- Add RLS policy for project_permissions table
+DROP POLICY IF EXISTS "Users can view project permissions" ON public.project_permissions;
+CREATE POLICY "Users can view project permissions"
+  ON public.project_permissions FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.project_permissions pp2
+      WHERE pp2.project_id = project_permissions.project_id
+        AND pp2.user_id = auth.uid()::text
+    )
+  );
 
 -- =====================================================
 -- ISSUE 2: Fix security_definer_view issues
@@ -74,23 +82,7 @@ SELECT
 FROM public.stock_movements
 GROUP BY product_id, movement_type;
 
--- 4. project_users_view (already fixed above with security_invoker)
--- Recreate with security_invoker
-DROP VIEW IF EXISTS public.project_users_view CASCADE;
-CREATE OR REPLACE VIEW public.project_users_view
-  WITH (security_invoker = true) AS
-SELECT
-  pu.id,
-  pu.project_id,
-  pu.user_id,
-  pu.role,
-  pu.created_at,
-  pu.user_email,
-  p.name as project_name
-FROM public.project_users pu
-LEFT JOIN public.projects p ON p.id = pu.project_id;
-
--- 5. Fix recipe_ingredients_view
+-- 4. Fix recipe_ingredients_view
 DROP VIEW IF EXISTS public.recipe_ingredients_view CASCADE;
 CREATE OR REPLACE VIEW public.recipe_ingredients_view
   WITH (security_invoker = true) AS
@@ -102,7 +94,7 @@ FROM public.recipe_ingredients ri
 LEFT JOIN public.products p ON p.id = ri.product_id
 LEFT JOIN public.recipes r ON r.id = ri.recipe_id;
 
--- 6. Fix expense_stats
+-- 5. Fix expense_stats
 DROP VIEW IF EXISTS public.expense_stats CASCADE;
 CREATE OR REPLACE VIEW public.expense_stats
   WITH (security_invoker = true) AS
@@ -115,7 +107,7 @@ SELECT
 FROM public.expenses
 GROUP BY project_id, category, DATE_TRUNC('month', date);
 
--- 7. Fix inventory_stats
+-- 6. Fix inventory_stats
 DROP VIEW IF EXISTS public.inventory_stats CASCADE;
 CREATE OR REPLACE VIEW public.inventory_stats
   WITH (security_invoker = true) AS
@@ -128,7 +120,7 @@ SELECT
 FROM public.products
 GROUP BY project_id;
 
--- 8. Fix reversible_operations
+-- 7. Fix reversible_operations
 DROP VIEW IF EXISTS public.reversible_operations CASCADE;
 CREATE OR REPLACE VIEW public.reversible_operations
   WITH (security_invoker = true) AS
@@ -172,7 +164,7 @@ REVOKE ALL ON public.reversible_operations FROM anon;
 -- =====================================================
 
 COMMENT ON VIEW public.project_users_view IS
-  'Secure view of project users without exposing auth.users. Uses security_invoker to respect RLS.';
+  'Secure view of project permissions with user emails. Uses security_invoker to respect RLS. Joins with auth.users safely.';
 
 COMMENT ON VIEW public.events_view IS
   'Events view with security_invoker to respect RLS policies.';
