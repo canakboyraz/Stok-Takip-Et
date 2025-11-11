@@ -115,6 +115,46 @@ create policy "Products are viewable by authenticated users"
 
 ---
 
+## 🔒 Güvenlik
+
+Bu proje güvenlik en iyi uygulamalarını takip eder:
+
+- ✅ **Row Level Security (RLS)** tüm tablolarda aktif
+- ✅ **Güvenlik açıkları düzeltildi** (auth_users_exposed, security_definer_view)
+- ✅ **Kapsamlı test coverage** (~725+ test case)
+- ✅ **Automated security scanning** (GitHub Actions)
+- ✅ **Güvenlik dokümantasyonu** (SECURITY.md)
+
+### Güvenlik Sorunlarını Bildirme
+
+Güvenlik açığı bulduysanız lütfen:
+1. **Public issue AÇMAYIN**
+2. GitHub Security Advisory oluşturun
+3. Veya doğrudan geliştiriciye ulaşın
+
+Detaylı bilgi için: [SECURITY.md](./SECURITY.md)
+
+---
+
+## 🧪 Test Coverage
+
+Proje kapsamlı test altyapısına sahiptir:
+
+- **725+ Test Case** (Unit, Integration, Component, E2E)
+- **%50+ Code Coverage** hedefi
+- **Automated CI/CD** with GitHub Actions
+- **Test Dokümantasyonu:** [TESTING.md](./TESTING.md)
+
+```bash
+# Testleri çalıştır
+npm test
+
+# Coverage raporu
+npm run test:coverage
+```
+
+---
+
 ## 👤 Geliştirici & Lisans
 
 - Geliştirici: [canakboyraz](https://github.com/canakboyraz)
