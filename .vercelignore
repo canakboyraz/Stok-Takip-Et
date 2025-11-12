@@ -1,0 +1,43 @@
+# Files to ignore during Vercel deployment
+
+# Source files
+src/
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# SQL files
+*.sql
+
+# Backup files
+backups/
+
+# Development files
+.env.example
+.cursor/
+.git/
+.gitignore
+
+# Test files
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+
+# Development scripts
+*.js
+!build/**/*.js
+projeksi-fix.js
+reset-app-data.js
+
+# HTML development files
+reset-app.html
+supabase-test.html
+
+# TypeScript config (not needed in production)
+tsconfig.json
+
+# Package files (Vercel handles these)
+package-lock.json
