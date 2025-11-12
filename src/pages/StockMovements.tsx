@@ -95,6 +95,55 @@ const StockMovements = () => {
   const [bulkOutNote, setBulkOutNote] = useState('');
   const [loading, setLoading] = useState(true);
 
+  const fetchProducts = useCallback(async () => {
+    try {
+      // Always get a fresh copy of the current project ID
+      const currentProjectId = localStorage.getItem('currentProjectId');
+
+      if (!currentProjectId) {
+        console.error('No project ID found in localStorage');
+        alert('Proje seçilmemiş. Lütfen önce bir proje seçin.');
+        navigate('/'); // Navigate to project selection page
+        return [];
+      }
+
+      // Parse project ID once
+      const projectId = parseInt(currentProjectId);
+
+      console.log(`fetchProducts: Getting products for project ID: ${projectId}`);
+
+      // RESET PRODUCTS FIRST - This is essential for project isolation
+      setProducts([]);
+
+      // Fetch only products from the current project
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('project_id', projectId)
+        .order('name');
+
+      if (error) throw error;
+
+      // Ensure we only include products from the current project
+      const projectProducts = data || [];
+      console.log(`fetchProducts: Loaded ${projectProducts.length} products for project ID: ${projectId}`);
+
+      // Log all the products we're about to set in state
+      projectProducts.forEach(p => {
+        console.log(`Setting product in state: ${p.id} (${p.name}), Project: ${p.project_id}`);
+      });
+
+      // Set products after completely emptying the previous state
+      setProducts(projectProducts);
+
+      return projectProducts; // Return for potential chaining
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      alert(`Ürünler yüklenirken bir hata oluştu: ${(error as Error).message}`);
+      return []; // Return empty array for safety
+    }
+  }, [navigate]);
+
   useEffect(() => {
     // Always refresh products for current project first
     fetchProducts().then(() => {
@@ -325,55 +374,6 @@ const StockMovements = () => {
     }
   };
 
-  const fetchProducts = useCallback(async () => {
-    try {
-      // Always get a fresh copy of the current project ID
-      const currentProjectId = localStorage.getItem('currentProjectId');
-
-      if (!currentProjectId) {
-        console.error('No project ID found in localStorage');
-        alert('Proje seçilmemiş. Lütfen önce bir proje seçin.');
-        navigate('/'); // Navigate to project selection page
-        return [];
-      }
-
-      // Parse project ID once
-      const projectId = parseInt(currentProjectId);
-
-      console.log(`fetchProducts: Getting products for project ID: ${projectId}`);
-
-      // RESET PRODUCTS FIRST - This is essential for project isolation
-      setProducts([]);
-
-      // Fetch only products from the current project
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('project_id', projectId)
-        .order('name');
-
-      if (error) throw error;
-
-      // Ensure we only include products from the current project
-      const projectProducts = data || [];
-      console.log(`fetchProducts: Loaded ${projectProducts.length} products for project ID: ${projectId}`);
-
-      // Log all the products we're about to set in state
-      projectProducts.forEach(p => {
-        console.log(`Setting product in state: ${p.id} (${p.name}), Project: ${p.project_id}`);
-      });
-
-      // Set products after completely emptying the previous state
-      setProducts(projectProducts);
-
-      return projectProducts; // Return for potential chaining
-    } catch (error) {
-      console.error('Error fetching products:', error);
-      alert(`Ürünler yüklenirken bir hata oluştu: ${(error as Error).message}`);
-      return []; // Return empty array for safety
-    }
-  }, [navigate]);
-  
   const handleDetailsOpen = (movement: DisplayStockMovement) => {
     // Eğer bulk hareket ise direkt olarak detayları göster
     if (movement.is_bulk && movement.bulk_details) {
