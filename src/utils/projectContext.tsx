@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
+import React, { createContext, useState, useEffect, useContext, ReactNode, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { Project } from '../types/database';
@@ -26,13 +26,13 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     } else {
       setLoading(false);
     }
-  }, []);
+  }, [loadProject]);
 
-  const loadProject = async (projectId: number) => {
+  const loadProject = useCallback(async (projectId: number) => {
     try {
       setLoading(true);
       console.log(`[ProjectContext] Proje yükleme başlıyor... Proje ID: ${projectId}`);
-      
+
       const { data, error } = await supabase
         .from('projects')
         .select('*')
@@ -46,7 +46,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
 
       console.log(`[ProjectContext] Proje başarıyla yüklendi:`, data);
       setCurrentProject(data);
-      
+
       // localStorage'a project ID'yi kaydet
       localStorage.setItem('currentProjectId', projectId.toString());
       console.log(`[ProjectContext] ProjectID localStorage'a kaydedildi: ${projectId}`);
@@ -57,12 +57,12 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     } finally {
       setLoading(false);
     }
-  };
+  }, [clearProject, navigate]);
 
-  const clearProject = () => {
+  const clearProject = useCallback(() => {
     setCurrentProject(null);
     localStorage.removeItem('currentProjectId');
-  };
+  }, []);
 
   return (
     <ProjectContext.Provider

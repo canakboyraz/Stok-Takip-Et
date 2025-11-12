@@ -152,7 +152,7 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({ children, requireProject = 
     };
 
     checkAuth();
-  }, []); // Boş dependency array
+  }, [requireProject]);
 
   if (error) {
     return (

@@ -373,7 +373,7 @@ const MenuAdd: React.FC = () => {
       // Düzenleme modu kontrolü
       if (isEditMode && editMenuId) {
         // Mevcut menüyü güncelle
-        const { data: updatedMenu, error: updateError } = await supabase
+        const { error: updateError } = await supabase
           .from('menus')
           .update({
             name: menuName,

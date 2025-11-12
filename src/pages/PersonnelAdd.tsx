@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Container,
   Typography,
@@ -12,7 +12,6 @@ import {
   CircularProgress
 } from '@mui/material';
 import { supabase } from '../lib/supabase';
-import { Personnel } from '../types/database';
 import { useNavigate } from 'react-router-dom';
 
 const PersonnelAdd = () => {
@@ -35,17 +34,17 @@ const PersonnelAdd = () => {
     type: 'success'
   });
   
-  useEffect(() => {
-    // Kullanıcı oturumunu kontrol et
-    checkUserSession();
-  }, []);
-  
-  const checkUserSession = async () => {
+  const checkUserSession = useCallback(async () => {
     const { data } = await supabase.auth.getUser();
     if (!data || !data.user) {
       navigate('/login');
     }
-  };
+  }, [navigate]);
+
+  useEffect(() => {
+    // Kullanıcı oturumunu kontrol et
+    checkUserSession();
+  }, [checkUserSession]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,7 +75,7 @@ const PersonnelAdd = () => {
       }
       
       // Personel kaydını oluştur
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('personnel')
         .insert({
           full_name: fullName.trim(),
@@ -91,7 +90,7 @@ const PersonnelAdd = () => {
           created_at: new Date().toISOString()
         })
         .select();
-      
+
       if (error) throw error;
       
       // Başarı mesajı göster

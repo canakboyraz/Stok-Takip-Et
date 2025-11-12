@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Container,
   Grid,
@@ -17,7 +17,7 @@ import {
 import { supabase } from '../lib/supabase';
 import { Product } from '../types/database';
 import { handleError, getErrorMessage } from '../utils/errorHandler';
-import { UI_CONSTANTS, DB_TABLES, CURRENCY, DATE_FORMATS } from '../utils/constants';
+import { UI_CONSTANTS, DB_TABLES, CURRENCY } from '../utils/constants';
 import useLocalStorage from '../hooks/useLocalStorage';
 
 const Dashboard = () => {
@@ -62,21 +62,17 @@ const Dashboard = () => {
     return `${amount.toLocaleString(CURRENCY.LOCALE)} ${CURRENCY.SYMBOL}`;
   };
 
-  useEffect(() => {
-    fetchProducts();
-  }, [currentProjectId]);
-
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       if (!currentProjectId) {
         throw new Error('Proje seçilmemiş. Lütfen bir proje seçin.');
       }
-      
+
       console.log(`Fetching products for project ID: ${currentProjectId}`);
-      
+
       const { data, error: supabaseError } = await supabase
         .from(DB_TABLES.PRODUCTS)
         .select(`
@@ -89,12 +85,12 @@ const Dashboard = () => {
         .order('expiry_date', { ascending: true });
 
       if (supabaseError) throw supabaseError;
-      
+
       const productsWithCategory = (data || []).map(product => ({
         ...product,
         category_name: product.categories?.name
       }));
-      
+
       setProducts(productsWithCategory);
 
       // Calculate statistics
@@ -103,7 +99,7 @@ const Dashboard = () => {
         (p) => isExpiringProduct(p.expiry_date)
       ).length;
       const totalValue = productsWithCategory.reduce(
-        (sum, p) => sum + p.price * p.stock_quantity, 
+        (sum, p) => sum + p.price * p.stock_quantity,
         0
       );
 
@@ -119,7 +115,11 @@ const Dashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentProjectId]);
+
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
 
   if (loading) {
     return (
