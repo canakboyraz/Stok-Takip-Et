@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Container,
   Paper,
@@ -74,8 +74,6 @@ interface DisplayStockMovement extends StockMovement {
 
 const StockMovements = () => {
   const [movements, setMovements] = useState<DisplayStockMovement[]>([]);
-  const [bulkMovements, setBulkMovements] = useState<BulkMovement[]>([]);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [products, setProducts] = useState<ExtendedProduct[]>([]);
   // Create a special state for dialog products only
   const [dialogProducts, setDialogProducts] = useState<ExtendedProduct[]>([]);
@@ -103,7 +101,7 @@ const StockMovements = () => {
       fetchMovements();
       checkDatabaseStructure();
     });
-  }, []);
+  }, [fetchProducts]);
 
   const checkDatabaseStructure = async () => {
     try {
@@ -213,7 +211,6 @@ const StockMovements = () => {
       
       if (!data || data.length === 0) {
         console.log('No movements found');
-        setBulkMovements([]);
         setMovements([]);
         setTotalAmount(0);
         setFilteredMovementsCount(0);
@@ -321,7 +318,6 @@ const StockMovements = () => {
       setTotalAmount(Math.abs(total)); // Mutlak değeri göster
       setFilteredMovementsCount(displayMovements.length);
       setMovements(displayMovements);
-      setBulkMovements(groupedBulkMovements);
     } catch (error) {
       console.error('Error fetching movements:', error);
     } finally {
@@ -329,26 +325,26 @@ const StockMovements = () => {
     }
   };
 
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     try {
       // Always get a fresh copy of the current project ID
       const currentProjectId = localStorage.getItem('currentProjectId');
-      
+
       if (!currentProjectId) {
         console.error('No project ID found in localStorage');
         alert('Proje seçilmemiş. Lütfen önce bir proje seçin.');
         navigate('/'); // Navigate to project selection page
         return [];
       }
-      
+
       // Parse project ID once
       const projectId = parseInt(currentProjectId);
-      
+
       console.log(`fetchProducts: Getting products for project ID: ${projectId}`);
-      
+
       // RESET PRODUCTS FIRST - This is essential for project isolation
       setProducts([]);
-      
+
       // Fetch only products from the current project
       const { data, error } = await supabase
         .from('products')
@@ -357,26 +353,26 @@ const StockMovements = () => {
         .order('name');
 
       if (error) throw error;
-      
+
       // Ensure we only include products from the current project
       const projectProducts = data || [];
       console.log(`fetchProducts: Loaded ${projectProducts.length} products for project ID: ${projectId}`);
-      
+
       // Log all the products we're about to set in state
       projectProducts.forEach(p => {
         console.log(`Setting product in state: ${p.id} (${p.name}), Project: ${p.project_id}`);
       });
-      
+
       // Set products after completely emptying the previous state
       setProducts(projectProducts);
-      
+
       return projectProducts; // Return for potential chaining
     } catch (error) {
       console.error('Error fetching products:', error);
       alert(`Ürünler yüklenirken bir hata oluştu: ${(error as Error).message}`);
       return []; // Return empty array for safety
     }
-  };
+  }, [navigate]);
   
   const handleDetailsOpen = (movement: DisplayStockMovement) => {
     // Eğer bulk hareket ise direkt olarak detayları göster

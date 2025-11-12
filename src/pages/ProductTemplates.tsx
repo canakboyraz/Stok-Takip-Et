@@ -38,11 +38,6 @@ interface ProductTemplate {
   project_id?: number;
 }
 
-interface Category {
-  id: number;
-  name: string;
-}
-
 const ProductTemplates = () => {
   const [templates, setTemplates] = useState<ProductTemplate[]>([]);
   const [fetchedCategories, setFetchedCategories] = useState<string[]>([]);

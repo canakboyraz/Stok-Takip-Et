@@ -1,11 +1,9 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Container,
   Typography,
   Box,
   Paper,
-  Grid,
-  TextField,
   Button,
   Table,
   TableBody,
@@ -20,7 +18,6 @@ import {
   MenuItem,
   Select,
   FormControl,
-  InputLabel,
   Tooltip,
   Chip
 } from '@mui/material';
@@ -33,7 +30,7 @@ import {
 } from '@mui/icons-material';
 import { supabase } from '../lib/supabase';
 import { Personnel, Timesheet } from '../types/database';
-import { format, parseISO, addMonths, subMonths, setDate, getDaysInMonth } from 'date-fns';
+import { format, addMonths, subMonths, setDate, getDaysInMonth } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import * as XLSX from 'xlsx';
 
@@ -62,7 +59,7 @@ const PersonnelTimesheet = () => {
     if (personnel.length > 0) {
       fetchTimesheets();
     }
-  }, [personnel, currentMonth]);
+  }, [personnel, fetchTimesheets]);
   
   // Ayın günlerini oluştur
   const daysInMonth = useMemo(() => {
@@ -108,31 +105,31 @@ const PersonnelTimesheet = () => {
     }
   };
   
-  const fetchTimesheets = async () => {
+  const fetchTimesheets = useCallback(async () => {
     try {
       setLoading(true);
-      
+
       const currentProjectId = localStorage.getItem('currentProjectId');
       if (!currentProjectId) {
         throw new Error('Proje ID bulunamadı');
       }
-      
+
       // Ay başlangıç ve bitiş tarihleri
       const startDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
       const endDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
-      
+
       const { data, error } = await supabase
         .from('timesheet')
         .select('*')
         .eq('project_id', currentProjectId)
         .gte('date', startDate.toISOString().split('T')[0])
         .lte('date', endDate.toISOString().split('T')[0]);
-      
+
       if (error) throw error;
-      
+
       setTimesheets(data || []);
       setTimesheetChanges({});
-      
+
     } catch (error: any) {
       console.error('Puantaj listesi alınırken hata:', error);
       setAlert({
@@ -143,7 +140,7 @@ const PersonnelTimesheet = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentMonth]);
   
   const handlePrevMonth = () => {
     setCurrentMonth(prevMonth => subMonths(prevMonth, 1));

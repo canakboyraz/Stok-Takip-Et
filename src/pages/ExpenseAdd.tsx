@@ -12,7 +12,6 @@ import {
   Snackbar
 } from '@mui/material';
 import { supabase } from '../lib/supabase';
-import { Expense } from '../types/database';
 
 const ExpenseAdd = () => {
   const [expenseName, setExpenseName] = useState('');
@@ -84,7 +83,7 @@ const ExpenseAdd = () => {
       });
       
       // Yeni gider kaydı ekle
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('expenses')
         .insert([
           {
@@ -97,7 +96,7 @@ const ExpenseAdd = () => {
           },
         ])
         .select();
-      
+
       if (error) throw error;
       
       // Başarılı kayıt

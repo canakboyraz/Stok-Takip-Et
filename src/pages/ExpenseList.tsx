@@ -167,7 +167,7 @@ const ExpenseList = () => {
       const formattedDate = new Date(expenseDate).toISOString();
       
       // Güncelleme işlemi
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('expenses')
         .update({
           name: expenseName.trim(),
@@ -177,7 +177,7 @@ const ExpenseList = () => {
         })
         .eq('id', editExpense.id)
         .select();
-      
+
       if (error) throw error;
       
       // Başarılı güncelleme
