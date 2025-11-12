@@ -18,15 +18,10 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    // Uygulama başladığında localStorage'dan proje ID'sini al
-    const projectId = localStorage.getItem('currentProjectId');
-    if (projectId) {
-      loadProject(parseInt(projectId));
-    } else {
-      setLoading(false);
-    }
-  }, [loadProject]);
+  const clearProject = useCallback(() => {
+    setCurrentProject(null);
+    localStorage.removeItem('currentProjectId');
+  }, []);
 
   const loadProject = useCallback(async (projectId: number) => {
     try {
@@ -59,10 +54,15 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   }, [clearProject, navigate]);
 
-  const clearProject = useCallback(() => {
-    setCurrentProject(null);
-    localStorage.removeItem('currentProjectId');
-  }, []);
+  useEffect(() => {
+    // Uygulama başladığında localStorage'dan proje ID'sini al
+    const projectId = localStorage.getItem('currentProjectId');
+    if (projectId) {
+      loadProject(parseInt(projectId));
+    } else {
+      setLoading(false);
+    }
+  }, [loadProject]);
 
   return (
     <ProjectContext.Provider
