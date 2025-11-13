@@ -51,48 +51,26 @@ const PersonnelTimesheet = () => {
   // Güncellenmiş puantaj verileri
   const [timesheetChanges, setTimesheetChanges] = useState<Record<string, any>>({});
   
-  useEffect(() => {
-    fetchPersonnel();
-  }, []);
-  
-  useEffect(() => {
-    if (personnel.length > 0) {
-      fetchTimesheets();
-    }
-  }, [personnel, fetchTimesheets]);
-  
-  // Ayın günlerini oluştur
-  const daysInMonth = useMemo(() => {
-    const days = [];
-    const daysCount = getDaysInMonth(currentMonth);
-    
-    for (let i = 1; i <= daysCount; i++) {
-      const day = setDate(currentMonth, i);
-      days.push(day);
-    }
-    
-    return days;
-  }, [currentMonth]);
-  
-  const fetchPersonnel = async () => {
+  // Personel listesini yükle
+  const fetchPersonnel = useCallback(async () => {
     try {
       setLoading(true);
-      
+
       const currentProjectId = localStorage.getItem('currentProjectId');
       if (!currentProjectId) {
         throw new Error('Proje ID bulunamadı');
       }
-      
+
       const { data, error } = await supabase
         .from('personnel')
         .select('*')
         .eq('project_id', currentProjectId)
         .order('full_name');
-      
+
       if (error) throw error;
-      
+
       setPersonnel(data || []);
-      
+
     } catch (error: any) {
       console.error('Personel listesi alınırken hata:', error);
       setAlert({
@@ -103,8 +81,9 @@ const PersonnelTimesheet = () => {
     } finally {
       setLoading(false);
     }
-  };
-  
+  }, []);
+
+  // Puantaj listesini yükle
   const fetchTimesheets = useCallback(async () => {
     try {
       setLoading(true);
@@ -141,7 +120,30 @@ const PersonnelTimesheet = () => {
       setLoading(false);
     }
   }, [currentMonth]);
+
+  useEffect(() => {
+    fetchPersonnel();
+  }, [fetchPersonnel]);
+
+  useEffect(() => {
+    if (personnel.length > 0) {
+      fetchTimesheets();
+    }
+  }, [personnel, fetchTimesheets]);
   
+  // Ayın günlerini oluştur
+  const daysInMonth = useMemo(() => {
+    const days = [];
+    const daysCount = getDaysInMonth(currentMonth);
+    
+    for (let i = 1; i <= daysCount; i++) {
+      const day = setDate(currentMonth, i);
+      days.push(day);
+    }
+    
+    return days;
+  }, [currentMonth]);
+
   const handlePrevMonth = () => {
     setCurrentMonth(prevMonth => subMonths(prevMonth, 1));
   };
